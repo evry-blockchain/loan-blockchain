@@ -39,7 +39,7 @@ type Participant struct {
 	participantType string
 }
 
-var participants []Participant
+var Participants []Participant
 
 // ============================================================================================================================
 // Main
@@ -53,9 +53,6 @@ func main() {
 
 // Init resets all the things
 func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
-	if len(args) != 1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 1")
-	}
 	return nil, nil
 }
 
@@ -97,18 +94,19 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 //Two arguments expected:
 //Participant Name (string)
 //Participant Type (string) BANK, BORROWER
-func (t *SimpleChaincode) addParticipant(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func (t *SimpleChaincode) addParticipant(stub *shim.ChaincodeStub, args []string) error {
 	if len(args) != 2 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 2")
+		return errors.New("Incorrect number of arguments. Expecting 2")
 	}
 
 	var p Participant
 	p.participantName = args[0]
 	p.participantType = args[1]
 
-	participants = append(participants, p)
+	Participants = append(Participants, p)
 
-	return nil, nil
+	fmt.Println("Put to ledger Participant: " + args[0] + " Type: " + args[1])
+	return nil
 }
 
 func (t *SimpleChaincode) getParticipantsList(stub *shim.ChaincodeStub, args []string) (string, error) {
@@ -117,15 +115,12 @@ func (t *SimpleChaincode) getParticipantsList(stub *shim.ChaincodeStub, args []s
 	//		s = s + "Participant Name: " + participants[i].participantName + " Participant Type: " + participants[i].participantType
 	//	}
 
-	s = string(len(participants))
+	s = string(len(Participants))
 	return s, nil
 }
 
 //2. Arranger Bank: send Loan invitation to Borrower
 func (t *SimpleChaincode) sendLoanInvitation(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
-	if len(args) != 2 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 2")
-	}
 	return nil, nil
 }
 
