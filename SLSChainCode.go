@@ -84,6 +84,7 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 		s, err := t.getParticipantsList(stub, args)
 		fmt.Println("Function " + function + " has been found") //error
 		if err == nil {
+			fmt.Println("Quantity of participants: " + s)
 			return nil, errors.New(s)
 		}
 	}
