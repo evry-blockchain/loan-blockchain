@@ -111,15 +111,12 @@ func (t *SimpleChaincode) addParticipant(stub *shim.ChaincodeStub, args []string
 }
 
 func (t *SimpleChaincode) getParticipantsList(stub *shim.ChaincodeStub, args []string) (string, error) {
-	if len(args) != 2 {
-		return "", errors.New("Incorrect number of arguments. Expecting 2")
-	}
-
 	var s string
-	for i := 0; i < len(participants); i++ {
-		s = s + "Participant Name: " + participants[i].participantName + " Participant Type: " + participants[i].participantType
-	}
+	//	for i := 0; i < len(participants); i++ {
+	//		s = s + "Participant Name: " + participants[i].participantName + " Participant Type: " + participants[i].participantType
+	//	}
 
+	s = string(len(participants))
 	return s, nil
 }
 
