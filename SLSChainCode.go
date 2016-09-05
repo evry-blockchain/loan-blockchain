@@ -83,7 +83,9 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 	if function == "getParticipantsList" { //read a variable
 		s, err := t.getParticipantsList(stub, args)
 		fmt.Println("Function " + function + " has been found") //error
-		return nil, errors.New(s)
+		if err == nil {
+			return nil, errors.New(s)
+		}
 	}
 	fmt.Println("query did not find func: " + function) //error
 
