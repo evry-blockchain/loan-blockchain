@@ -78,11 +78,11 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 
 	// Handle different functions
 	if function == "getParticipantsList" { //read a variable
-		s, err := t.getParticipantsList(stub, args)
+		i, err := t.getParticipantsList(stub, args)
 		fmt.Println("Function " + function + " has been found") //error
 		if err == nil {
-			fmt.Println("Quantity of participants: " + s)
-			return nil, errors.New(s)
+			fmt.Println("Quantity of participants: " + string(i))
+			return nil, nil
 		}
 	}
 	fmt.Println("query did not find func: " + function) //error
@@ -109,14 +109,13 @@ func (t *SimpleChaincode) addParticipant(stub *shim.ChaincodeStub, args []string
 	return nil
 }
 
-func (t *SimpleChaincode) getParticipantsList(stub *shim.ChaincodeStub, args []string) (string, error) {
-	var s string
+func (t *SimpleChaincode) getParticipantsList(stub *shim.ChaincodeStub, args []string) (int, error) {
 	//	for i := 0; i < len(participants); i++ {
 	//		s = s + "Participant Name: " + participants[i].participantName + " Participant Type: " + participants[i].participantType
 	//	}
 
-	s = string(len(Participants))
-	return s, nil
+	i := len(Participants)
+	return i, nil
 }
 
 //2. Arranger Bank: send Loan invitation to Borrower
