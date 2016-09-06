@@ -39,7 +39,7 @@ func main() {
 }
 
 // Init resets all the things
-func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 
 	//not to forget delete table is it already exists
 	stub.DeleteTable("Participants")
@@ -63,7 +63,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 }
 
 // Invoke is our entry point to invoke a chaincode function
-func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 	fmt.Println("invoke is running " + function)
 
 	// Handle different functions
@@ -79,7 +79,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 }
 
 // Query is our entry point for queries
-func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 	fmt.Println("query is running " + function)
 
 	// Handle different functions
@@ -99,7 +99,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 //Two arguments expected:
 //Participant Name (string)
 //Participant Type (string) BANK, BORROWER
-func (t *SimpleChaincode) addParticipant(stub shim.ChaincodeStubInterface, args []string) error {
+func (t *SimpleChaincode) addParticipant(stub *shim.ChaincodeStub, args []string) error {
 	if len(args) != 2 {
 		return errors.New("Incorrect number of arguments. Expecting 2")
 	}
@@ -133,7 +133,7 @@ func (t *SimpleChaincode) addParticipant(stub shim.ChaincodeStubInterface, args 
 	return nil
 }
 
-func (t *SimpleChaincode) getParticipantsQuantity(stub shim.ChaincodeStubInterface, args []string) (string, error) {
+func (t *SimpleChaincode) getParticipantsQuantity(stub *shim.ChaincodeStub, args []string) (string, error) {
 
 	qBytes, err := stub.GetState("ParticipantsQuantity")
 	if qBytes == nil {
@@ -148,7 +148,7 @@ func (t *SimpleChaincode) getParticipantsQuantity(stub shim.ChaincodeStubInterfa
 }
 
 //2. Arranger Bank: send Loan invitation to Borrower
-func (t *SimpleChaincode) sendLoanInvitation(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func (t *SimpleChaincode) sendLoanInvitation(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	return nil, nil
 }
 
