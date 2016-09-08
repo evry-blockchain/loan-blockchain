@@ -17,12 +17,23 @@ limitations under the License.
 package main
 
 import (
+	//	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
+
+const ParticipantsTableName = "Participants"
+const ParticipantsQuantityKey = "ParticipantsQuantity"
+
+var ParticipantsQuantity int
+
+type Participant struct {
+	ParticipantName string `json:"company"`
+	ParticipantType int    `json:"quantity"`
+}
 
 // SimpleChaincode example simple Chaincode implementation
 type SimpleChaincode struct {
@@ -39,39 +50,41 @@ func main() {
 }
 
 // Init resets all the things
-func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 
 	//not to forget delete table is it already exists
-	stub.DeleteTable("Participants")
+	stub.DeleteTable(ParticipantsTableName)
+	stub.DelState(ParticipantsQuantityKey)
 
-	err := stub.CreateTable("Participants", []*shim.ColumnDefinition{
-		&shim.ColumnDefinition{Name: "Id", Type: shim.ColumnDefinition_UINT32, Key: true},
-		&shim.ColumnDefinition{Name: "Name", Type: shim.ColumnDefinition_STRING, Key: true},
-		&shim.ColumnDefinition{Name: "Type", Type: shim.ColumnDefinition_BYTES, Key: false},
+	err := stub.CreateTable(ParticipantsTableName, []*shim.ColumnDefinition{
+		&shim.ColumnDefinition{Name: "Id", Type: shim.ColumnDefinition_STRING, Key: true},
+		&shim.ColumnDefinition{Name: "Name", Type: shim.ColumnDefinition_STRING, Key: false},
+		&shim.ColumnDefinition{Name: "Type", Type: shim.ColumnDefinition_STRING, Key: false},
 	})
 
 	if err != nil {
 		return nil, errors.New("Failed creating Participants table: " + err.Error())
 	}
 
-	err2 := stub.PutState("ParticipantsQuantity", []byte(strconv.Itoa(0)))
+	err2 := stub.PutState(ParticipantsQuantityKey, []byte(strconv.Itoa(0)))
 	if err2 != nil {
 		return nil, errors.New("Failed to add participants quantity to state")
 	}
+	ParticipantsQuantity = 0
 
 	return nil, nil
 }
 
 // Invoke is our entry point to invoke a chaincode function
-func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Println("invoke is running " + function)
 
 	// Handle different functions
 	if function == "init" { //initialize the chaincode state, used as reset
 		return t.Init(stub, "init", args)
 	}
-	if function == "addParticipant" { //initialize the chaincode state, used as reset
-		return nil, t.addParticipant(stub, args)
+	if function == "addParticipant" {
+		return t.addParticipant(stub, args)
 	}
 	fmt.Println("invoke did not find func: " + function) //error
 
@@ -79,17 +92,25 @@ func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args
 }
 
 // Query is our entry point for queries
-func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Println("query is running " + function)
 
 	// Handle different functions
 	if function == "getParticipantsQuantity" { //read a variable
-		q, err := t.getParticipantsQuantity(stub, args)
-		if err == nil {
-			fmt.Println("Quantity of participants: " + q)
-			return nil, nil
+		res, err := t.getParticipantsQuantity(stub, args)
+		if err != nil {
+			return nil, errors.New("Error getting participants quantity")
 		}
+		return res, nil
 	}
+	if function == "getParticipantsList" {
+		res, err := t.getParticipantsList(stub, args)
+		if err != nil {
+			return nil, errors.New("Error getting participants list")
+		}
+		return res, nil
+	}
+
 	fmt.Println("query did not find func: " + function) //error
 
 	return nil, errors.New("Received unknown function query")
@@ -99,56 +120,90 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 //Two arguments expected:
 //Participant Name (string)
 //Participant Type (string) BANK, BORROWER
-func (t *SimpleChaincode) addParticipant(stub *shim.ChaincodeStub, args []string) error {
+func (t *SimpleChaincode) addParticipant(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	if len(args) != 2 {
-		return errors.New("Incorrect number of arguments. Expecting 2")
+		return nil, errors.New("Incorrect number of arguments. Expecting 2")
 	}
 
-	qBytes, _ := stub.GetState("ParticipantsQuantity")
+	qBytes, _ := stub.GetState(ParticipantsQuantityKey)
 	if qBytes == nil {
-		return errors.New("Participants quantity entity not found")
+		return nil, errors.New("Participants quantity entity not found")
 	}
-	q, _ := strconv.Atoi(string(qBytes))
+
+	qstr := string(qBytes)
+	q, errconv := strconv.Atoi(qstr)
+	if errconv != nil {
+		return nil, errors.New("Error converting key string to int")
+	}
 	q++
+	qstr = strconv.Itoa(q)
 
 	//Add participant to ledger table
-	ok, err := stub.InsertRow("Participants", shim.Row{
+	ok, err := stub.InsertRow(ParticipantsTableName, shim.Row{
 		Columns: []*shim.Column{
-			&shim.Column{Value: &shim.Column_Int32{Int32: int32(q)}},
+			&shim.Column{Value: &shim.Column_String_{String_: qstr}},
 			&shim.Column{Value: &shim.Column_String_{String_: args[0]}},
 			&shim.Column{Value: &shim.Column_String_{String_: args[1]}}},
 	})
 	if !ok && err == nil {
-		return errors.New("Participant " + args[0] + " already assigned")
+		return nil, errors.New("Participant " + args[0] + " already assigned")
 	}
 
 	//Update total participants quantity
-	err2 := stub.PutState("ParticipantsQuantity", []byte(strconv.Itoa(q)))
+	err2 := stub.PutState(ParticipantsQuantityKey, []byte(qstr))
 
-	if err2 != nil {
-		return errors.New("Failed to add Participant")
+	if err != nil || err2 != nil {
+		return nil, errors.New("Failed to add Participant")
 	}
 
-	fmt.Println("Participant: " + args[0] + " Type: " + args[1] + " has been put to ledger")
-	return nil
+	ParticipantsQuantity = q
+
+	s := "The row has been added to Participants table in ledger: Key: " + qstr + " Participant: " + qstr + " Type: " + args[1]
+	fmt.Println(s)
+	return nil, nil
 }
 
-func (t *SimpleChaincode) getParticipantsQuantity(stub *shim.ChaincodeStub, args []string) (string, error) {
+func (t *SimpleChaincode) getParticipantsQuantity(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 
-	qBytes, err := stub.GetState("ParticipantsQuantity")
+	/*qBytes, err := stub.GetState(ParticipantsQuantityKey)
 	if qBytes == nil {
 		return "", errors.New("Participants quantity entity not found")
 	}
 
 	if err != nil {
 		return "", errors.New("Failed to get participants quantity")
+	}*/
+
+	return []byte(strconv.Itoa(ParticipantsQuantity)), nil
+}
+
+func (t *SimpleChaincode) getParticipantsList(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+
+	var s string
+	for i := 1; i <= ParticipantsQuantity; i++ {
+
+		var cols []shim.Column
+		col := shim.Column{Value: &shim.Column_Int32{Int32: int32(i)}}
+		cols = append(cols, col)
+
+		row, err := stub.GetRow(ParticipantsTableName, cols)
+		fmt.Println("Row: "+strconv.Itoa(i), row)
+
+		if err != nil {
+			return nil, errors.New("Failed to get participants table")
+		}
+
+		s = s + row.String()
+
 	}
 
-	return string(qBytes), nil
+	//fmt.Println("Column: ", col.Value, " Quantity of columns: ", len(row.Columns), cap(row.Columns))
+
+	return []byte(s), nil
 }
 
 //2. Arranger Bank: send Loan invitation to Borrower
-func (t *SimpleChaincode) sendLoanInvitation(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func (t *SimpleChaincode) sendLoanInvitation(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	return nil, nil
 }
 
