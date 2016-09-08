@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	//	"encoding/json"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -28,11 +28,16 @@ import (
 const ParticipantsTableName = "Participants"
 const ParticipantsQuantityKey = "ParticipantsQuantity"
 
+const ParticipantKeyColName = "ParticipantKey"
+const ParticipantNameColName = "ParticipantName "
+const ParticipantTypeColName = "ParticipantType"
+
 var ParticipantsQuantity int
 
 type Participant struct {
-	ParticipantName string `json:"company"`
-	ParticipantType int    `json:"quantity"`
+	ParticipantKey  string `json:"ParticipantKey"`
+	ParticipantName string `json:"ParticipantName"`
+	ParticipantType string `json:"ParticipantType"`
 }
 
 // SimpleChaincode example simple Chaincode implementation
@@ -57,9 +62,9 @@ func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args [
 	stub.DelState(ParticipantsQuantityKey)
 
 	err := stub.CreateTable(ParticipantsTableName, []*shim.ColumnDefinition{
-		&shim.ColumnDefinition{Name: "Id", Type: shim.ColumnDefinition_STRING, Key: true},
-		&shim.ColumnDefinition{Name: "Name", Type: shim.ColumnDefinition_STRING, Key: false},
-		&shim.ColumnDefinition{Name: "Type", Type: shim.ColumnDefinition_STRING, Key: false},
+		&shim.ColumnDefinition{Name: ParticipantKeyColName, Type: shim.ColumnDefinition_STRING, Key: true},
+		&shim.ColumnDefinition{Name: ParticipantNameColName, Type: shim.ColumnDefinition_STRING, Key: false},
+		&shim.ColumnDefinition{Name: ParticipantTypeColName, Type: shim.ColumnDefinition_STRING, Key: false},
 	})
 
 	if err != nil {
@@ -179,27 +184,26 @@ func (t *SimpleChaincode) getParticipantsQuantity(stub *shim.ChaincodeStub, args
 
 func (t *SimpleChaincode) getParticipantsList(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 
-	var s string
-	for i := 1; i <= ParticipantsQuantity; i++ {
+	var p Participant
+	var ps []Participant
 
+	for i := 1; i <= ParticipantsQuantity; i++ {
 		var cols []shim.Column
 		col := shim.Column{Value: &shim.Column_Int32{Int32: int32(i)}}
 		cols = append(cols, col)
 
-		row, err := stub.GetRow(ParticipantsTableName, cols)
-		fmt.Println("Row: "+strconv.Itoa(i), row)
+		row, _ := stub.GetRow(ParticipantsTableName, cols)
 
-		if err != nil {
-			return nil, errors.New("Failed to get participants table")
-		}
+		p.ParticipantKey = row.Columns[0].GetString_()
+		p.ParticipantName = row.Columns[1].GetString_()
+		p.ParticipantType = row.Columns[2].GetString_()
 
-		s = s + row.String()
-
+		ps = append(ps, p)
 	}
 
-	//fmt.Println("Column: ", col.Value, " Quantity of columns: ", len(row.Columns), cap(row.Columns))
+	res, _ := json.Marshal(ps)
 
-	return []byte(s), nil
+	return res, nil
 }
 
 //2. Arranger Bank: send Loan invitation to Borrower
