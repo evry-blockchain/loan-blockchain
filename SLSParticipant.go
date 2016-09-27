@@ -23,7 +23,7 @@ var P_ColumnNames []string
 //
 // ============================================================================================================================
 
-func CreateParticipantTable(stub shim.ChaincodeStubInterface) error {
+func CreateParticipantTable(stub *shim.ChaincodeStub) error {
 	P_ColumnNames = []string{P_ParticipantKeyColName, P_ParticipantNameColName, P_ParticipantTypeColName}
 	return createTable(stub, ParticipantsTableName, P_ColumnNames)
 }
@@ -32,7 +32,7 @@ func CreateParticipantTable(stub shim.ChaincodeStubInterface) error {
 //Two arguments expected:
 //Participant Name (string)
 //Participant Type (string) BANK, BORROWER, LAYER
-func addParticipant(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func addParticipant(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	if len(args) != len(P_ColumnNames)-1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(len(P_ColumnNames)-1))
 	}
@@ -40,15 +40,15 @@ func addParticipant(stub shim.ChaincodeStubInterface, args []string) ([]byte, er
 	return nil, err
 }
 
-func getParticipantsQuantity(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func getParticipantsQuantity(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	return countTableRows(stub, []string{ParticipantsTableName})
 }
 
-func getParticipantsList(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func getParticipantsList(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	return filterTableByValue(stub, []string{ParticipantsTableName})
 }
 
-func getParticipantsByType(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func getParticipantsByType(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	if len(args) != 1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 1")
 	}

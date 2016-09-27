@@ -12,7 +12,7 @@ import (
 // This function should update single column of any table
 // If column or table does not exists it returns error
 // If filter takes quantity of rows not equal to one (zero as well) it returns error
-func updateTableField(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func updateTableField(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 
 	if len(args) != 4 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 4")
@@ -82,7 +82,7 @@ func updateTableField(stub shim.ChaincodeStubInterface, args []string) ([]byte, 
 	return nil, nil
 }
 
-func countTableRows(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func countTableRows(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 
 	var numberOfArgs int = 1
 	if len(args) != numberOfArgs {
@@ -100,7 +100,7 @@ func countTableRows(stub shim.ChaincodeStubInterface, args []string) ([]byte, er
 	return []byte(strconv.Itoa(q)), nil
 }
 
-func countTableRowsInt(stub shim.ChaincodeStubInterface, tableName string) (int, error) {
+func countTableRowsInt(stub *shim.ChaincodeStub, tableName string) (int, error) {
 	// The function hangs for about 10 seconds if table Name does not exist
 	// consider a fix !!!!!!!!!!!!!!
 
@@ -125,7 +125,7 @@ func countTableRowsInt(stub shim.ChaincodeStubInterface, tableName string) (int,
 	return q, nil
 }
 
-func filterTableByValue(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func filterTableByValue(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 
 	var tableName, filterColumn, filterValue string
 	var isFiltered bool
@@ -183,7 +183,7 @@ func filterTableByValue(stub shim.ChaincodeStubInterface, args []string) ([]byte
 	return recordsetToJson(stub, tbl, rows)
 }
 
-func recordsetToJson(stub shim.ChaincodeStubInterface, tbl *shim.Table, rows []shim.Row) ([]byte, error) {
+func recordsetToJson(stub *shim.ChaincodeStub, tbl *shim.Table, rows []shim.Row) ([]byte, error) {
 
 	var ColumnNames []string
 	for _, cd := range tbl.ColumnDefinitions {
@@ -209,7 +209,7 @@ func recordsetToJson(stub shim.ChaincodeStubInterface, tbl *shim.Table, rows []s
 	return []byte(s), nil
 }
 
-func createTable(stub shim.ChaincodeStubInterface, tableName string, columns []string) error {
+func createTable(stub *shim.ChaincodeStub, tableName string, columns []string) error {
 	//not to forget delete table is it already exists
 	stub.DeleteTable(tableName)
 
@@ -228,7 +228,7 @@ func createTable(stub shim.ChaincodeStubInterface, tableName string, columns []s
 	return nil
 }
 
-func addRow(stub shim.ChaincodeStubInterface, tableName string, args []string) error {
+func addRow(stub *shim.ChaincodeStub, tableName string, args []string) error {
 
 	q, err := countTableRowsInt(stub, tableName)
 	if err != nil {
