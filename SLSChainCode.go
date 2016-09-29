@@ -145,104 +145,69 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 	fmt.Println("query is running " + function)
 
 	// Handle different functions
-	switch function {
 	//Participants
-	case "getParticipantsQuantity":
+	if function == "getParticipantsQuantity" {
 		return getParticipantsQuantity(stub, args)
-	case "getParticipantsList":
+	}
+	if function == "getParticipantsList" {
 		return getParticipantsList(stub, args)
-	case "getParticipantsByType":
+	}
+	if function == "getParticipantsByType" {
 		return getParticipantsByType(stub, args)
+	}
 	//Loans
-	case "getLoansQuantity":
+	if function == "getLoansQuantity" {
 		return getLoansQuantity(stub, args)
-	case "getLoansList":
+	}
+	if function == "getLoansList" {
 		return getLoansList(stub, args)
+	}
 	//LoanShares
-	case "getLoanSharesQuantity":
+	if function == "getLoanSharesQuantity" {
 		return getLoanSharesQuantity(stub, args)
-	case "getLoanSharesList":
+	}
+	if function == "getLoanSharesList" {
 		return getLoanSharesList(stub, args)
 	}
 
 	//LoanRequest
 	if function == "getLoanRequestsQuantity" { //read a variable
-		res, err := getLoanRequestsQuantity(stub, args)
-		if err != nil {
-			return nil, errors.New("Error getting loan requests quantity")
-		}
-		return res, nil
+		return getLoanRequestsQuantity(stub, args)
 	}
 	if function == "getLoanRequestsList" {
-		res, err := getLoanRequestsList(stub, args)
-		if err != nil {
-			return nil, errors.New("Error getting Loan requests list")
-		}
-		return res, nil
+		return getLoanRequestsList(stub, args)
 	}
 
 	//LoanInvitation
 	if function == "getLoanInvitationsQuantity" { //read a variable
-		res, err := getLoanInvitationsQuantity(stub, args)
-		if err != nil {
-			return nil, errors.New("Error getting Loan Invitations quantity")
-		}
-		return res, nil
+		return getLoanInvitationsQuantity(stub, args)
 	}
 	if function == "getLoanInvitationsList" {
-		res, err := getLoanInvitationsList(stub, args)
-		if err != nil {
-			return nil, errors.New("Error getting Loan Invitations list")
-		}
-		return res, nil
+		return getLoanInvitationsList(stub, args)
 	}
 
 	//Transactions
 	if function == "getTransactionsQuantity" { //read a variable
-		res, err := getTransactionsQuantity(stub, args)
-		if err != nil {
-			return nil, errors.New("Error getting Transactions quantity")
-		}
-		return res, nil
+		return getTransactionsQuantity(stub, args)
 	}
 	if function == "getTransactionsList" {
-		res, err := getTransactionsList(stub, args)
-		if err != nil {
-			return nil, errors.New("Error getting Transactions list")
-		}
-		return res, nil
+		return getTransactionsList(stub, args)
 	}
 
 	//Loan Return
 	if function == "getLoanReturnsQuantity" { //read a variable
-		res, err := getLoanReturnsQuantity(stub, args)
-		if err != nil {
-			return nil, errors.New("Error getting Loan Returns quantity")
-		}
-		return res, nil
+		return getLoanReturnsQuantity(stub, args)
 	}
 	if function == "getLoanReturnsList" {
-		res, err := getLoanReturnsList(stub, args)
-		if err != nil {
-			return nil, errors.New("Error getting Loan Returns list")
-		}
-		return res, nil
+		return getLoanReturnsList(stub, args)
 	}
 
 	//Loan Sale
 	if function == "getLoanSalesQuantity" { //read a variable
-		res, err := getLoanSalesQuantity(stub, args)
-		if err != nil {
-			return nil, errors.New("Error getting Loan Sales quantity")
-		}
-		return res, nil
+		return getLoanSalesQuantity(stub, args)
 	}
 	if function == "getLoanSalesList" {
-		res, err := getLoanSalesList(stub, args)
-		if err != nil {
-			return nil, errors.New("Error getting Loan Sales list")
-		}
-		return res, nil
+		return getLoanSalesList(stub, args)
 	}
 
 	//Loan Share Negotiation
@@ -290,6 +255,24 @@ func (t *SimpleChaincode) populateInitialData(stub *shim.ChaincodeStub) error {
 	_, _ = addAccount(stub, []string{"1", "10000"})
 	_, _ = addAccount(stub, []string{"2", "50000"})
 	_, _ = addAccount(stub, []string{"3", "30000"})
+
+	//Loan Request
+	// "BorrowerID", "LoanSharesAmount", "ProjectRevenue", "ProjectName", "ProjectInformation",
+	//"Company", "Website", "ContactPersonName", "ContactPersonSurname", "RequestDate", "ArrangerBankID", "Status"
+	_, _ = addLoanRequest(stub, []string{"1", "1000", "1M", "ProjectA", "ProjectA information", "CompanyA", "www.CompanyA.com", "Bill", "Gates", "10-01-2016", "1", "Pending"})
+	_, _ = addLoanRequest(stub, []string{"1", "1000", "1M", "ProjectB", "ProjectB information", "CompanyB", "www.CompanyB.com", "Peter", "Froystad", "10-01-2016", "1", "Pending"})
+
+	//Loan Invitation
+	//"ArrangerBankID","BorrowerID","LoanRequestID","LoanTerm","Amount","InterestRate","Info","Status"
+	_, _ = addLoanInvitation(stub, []string{"1", "1", "1", "2 years", "400", "3%", "Company A loan invitation info", "Pending"})
+	_, _ = addLoanInvitation(stub, []string{"2", "3", "2", "3 years", "5000", "0.5%", "Company B loan invitation info", "Accepted"})
+
+	//Loan Share Negotiation
+	//"InvitationID","ParticipantBankID","Amount","NegotiationStatus"
+	_, _ = addLoanShareNegotiation(stub, []string{"1", "2", "200", "Pending"})
+	_, _ = addLoanShareNegotiation(stub, []string{"1", "3", "200", "Pending"})
+	_, _ = addLoanShareNegotiation(stub, []string{"2", "1", "2000", "Pending"})
+	_, _ = addLoanShareNegotiation(stub, []string{"2", "3", "3000", "Pending"})
 
 	return nil
 }

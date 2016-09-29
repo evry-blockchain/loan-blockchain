@@ -16,15 +16,12 @@ const LoanRequestsTableName = "LoanRequests"
 const LR_LoanRequestIDColName = "LoanRequestID"
 const LR_BorrowerIDColName = "BorrowerID"
 const LR_LoanSharesAmountColName = "LoanSharesAmount"
-
 const LR_ProjectRevenueColName = "ProjectRevenue"
 const LR_ProjectNameColName = "ProjectName"
 const LR_ProjectInformationColName = "ProjectInformation"
-
 const LR_CompanyColName = "Company"
 const LR_WebsiteColName = "Website"
 const LR_ContactPersonNameColName = "ContactPersonName"
-
 const LR_ContactPersonSurnameColName = "ContactPersonSurname"
 const LR_RequestDateColName = "RequestDate"
 const LR_ArrangerBankIDColName = "ArrangerBankID"

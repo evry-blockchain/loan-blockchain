@@ -266,3 +266,52 @@ func addRow(stub *shim.ChaincodeStub, tableName string, args []string) error {
 	return nil
 
 }
+
+func isCaller(stub *shim.ChaincodeStub, certificate []byte) (bool, error) {
+
+	fmt.Println("Check caller...")
+
+	// In order to enforce access control, we require that the
+	// metadata contains the signature under the signing key corresponding
+	// to the verification key inside certificate of
+	// the payload of the transaction (namely, function name and args) and
+	// the transaction binding (to avoid copying attacks)
+
+	// Verify \sigma=Sign(certificate.sk, tx.Payload||tx.Binding) against certificate.vk
+	// \sigma is in the metadata
+
+	sigma, err := stub.GetCallerMetadata()
+	if err != nil {
+		return false, errors.New("Failed getting metadata")
+	}
+	payload, err := stub.GetPayload()
+	if err != nil {
+		return false, errors.New("Failed getting payload")
+	}
+	binding, err := stub.GetBinding()
+	if err != nil {
+		return false, errors.New("Failed getting binding")
+	}
+
+	fmt.Printf("passed certificate [% x]\n", certificate)
+	fmt.Printf("passed sigma [% x]\n", sigma)
+	fmt.Printf("passed payload [% x]\n", payload)
+	fmt.Printf("passed binding [% x]\n", binding)
+
+	ok, err := stub.VerifySignature(
+		certificate,
+		sigma,
+		append(payload, binding...),
+	)
+	if err != nil {
+		fmt.Println("Failed checking signature [%s]", err)
+		return ok, err
+	}
+	if !ok {
+		fmt.Println("Invalid signature")
+	}
+
+	fmt.Println("Check caller...Verified!")
+
+	return ok, err
+}
