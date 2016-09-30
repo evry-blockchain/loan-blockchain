@@ -281,7 +281,7 @@ func (t *SimpleChaincode) printCallerCertificate(stub *shim.ChaincodeStub) ([]by
 	fmt.Printf("Timestamp: %v\n\n", timestamp)
 
 	//###########################################
-	return callerMetadata, err
+	return []byte("Caller Metadata: " + callerMetadata), err
 }
 
 func (t *SimpleChaincode) populateInitialData(stub *shim.ChaincodeStub) error {
