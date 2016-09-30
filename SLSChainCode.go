@@ -38,7 +38,7 @@ func main() {
 }
 
 // Init resets all the things
-func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 
 	err := CreateParticipantTable(stub)
 	if err != nil {
@@ -88,7 +88,7 @@ func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args [
 }
 
 // Invoke is our entry point to invoke a chaincode function
-func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Println("invoke is running " + function)
 
 	// Handle different functions
@@ -142,7 +142,7 @@ func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args
 }
 
 // Query is our entry point for queries
-func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Println("query is running " + function)
 
 	// Handle different functions
@@ -236,7 +236,11 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 		return filterTableByValue(stub, args)
 	}
 	if function == "printCallerCertificate" {
-		return t.printCallerCertificate(stub)
+		return printCallerCertificate(stub)
+	}
+
+	if function == "getCertAttribute" {
+		return getCertAttribute(stub, args)
 	}
 	//========================================================================
 
@@ -245,7 +249,7 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 	return nil, errors.New("Received unknown function query")
 }
 
-func (t *SimpleChaincode) printCallerCertificate(stub *shim.ChaincodeStub) ([]byte, error) {
+func printCallerCertificate(stub shim.ChaincodeStubInterface) ([]byte, error) {
 	// Verify the identity of the caller
 	// Only an administrator can add Participant
 	//###########################################
@@ -276,15 +280,30 @@ func (t *SimpleChaincode) printCallerCertificate(stub *shim.ChaincodeStub) ([]by
 
 	timestamp, err := stub.GetTxTimestamp()
 	if err != nil {
-		return nil, errors.New("Failed retrieving Attribute 'role': " + err.Error())
+		return nil, errors.New("Failed retrieving Timestamp': " + err.Error())
 	}
 	fmt.Printf("Timestamp: %v\n\n", timestamp)
 
 	//###########################################
-	return []byte("Caller Metadata: " + string(callerMetadata)), err
+	return []byte("Caller Metadata: " + string(callerMetadata)), nil
 }
 
-func (t *SimpleChaincode) populateInitialData(stub *shim.ChaincodeStub) error {
+func getCertAttribute(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != 1 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 1")
+	}
+
+	attrName := args[0]
+	attribute, err := stub.ReadCertAttribute(attrName)
+	if err != nil {
+		return nil, errors.New("Failed retrieving Certificate Attribute '" + attrName + "': " + err.Error())
+	}
+	fmt.Printf("Certificate Attribute '%v': %v\n\n", attrName, string(attribute))
+
+	return []byte("Attribute '" + attrName + "': " + string(attribute)), nil
+}
+
+func (t *SimpleChaincode) populateInitialData(stub shim.ChaincodeStubInterface) error {
 
 	//Participants
 	_, _ = addParticipant(stub, []string{"Bank of Associates & Companies LTD", "Bank"})
