@@ -44,6 +44,7 @@ func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args [
 	if err != nil {
 		return nil, errors.New("Failed creating Participants table: " + err.Error())
 	}
+
 	err = CreateLoanTable(stub)
 	if err != nil {
 		return nil, errors.New("Failed creating Loan table: " + err.Error())
@@ -234,11 +235,53 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 	if function == "filterTableByValue" {
 		return filterTableByValue(stub, args)
 	}
+	if function == "printCallerSertificate" {
+		return t.printCallerSertificate(stub)
+	}
 	//========================================================================
 
 	fmt.Println("query did not find func: " + function) //error
 
 	return nil, errors.New("Received unknown function query")
+}
+
+func (t *SimpleChaincode) printCallerSertificate(stub *shim.ChaincodeStub) ([]byte, error) {
+	// Verify the identity of the caller
+	// Only an administrator can add Participant
+	//###########################################
+
+	certificate, err := stub.GetCallerCertificate()
+	if err != nil {
+		return nil, errors.New("Failed retrieving Certificate: " + err.Error())
+	}
+	fmt.Printf("\n\nCertificate: %v\n\n", string(certificate))
+
+	callerMetadata, err := stub.GetCallerMetadata()
+	if err != nil {
+		return nil, errors.New("Failed retrieving Caller Metadata: " + err.Error())
+	}
+	fmt.Printf("Caller Metadata: %v\nCaller Metadata length:%v\n\n", string(callerMetadata), len(callerMetadata))
+
+	payload, err := stub.GetPayload()
+	if err != nil {
+		return nil, errors.New("Failed retrieving Payload: " + err.Error())
+	}
+	fmt.Printf("Payload: %v\n\n", string(payload))
+
+	binding, err := stub.GetBinding()
+	if err != nil {
+		return nil, errors.New("Failed retrieving Binding: " + err.Error())
+	}
+	fmt.Printf("Binding: %v\n\n", string(binding))
+
+	timestamp, err := stub.GetTxTimestamp()
+	if err != nil {
+		return nil, errors.New("Failed retrieving Attribute 'role': " + err.Error())
+	}
+	fmt.Printf("Timestamp: %v\n\n", timestamp)
+
+	//###########################################
+	return nil, err
 }
 
 func (t *SimpleChaincode) populateInitialData(stub *shim.ChaincodeStub) error {

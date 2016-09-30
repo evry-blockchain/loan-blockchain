@@ -3,7 +3,7 @@ package main
 import (
 	//"encoding/json"
 	"errors"
-	//	"fmt"
+	//"fmt"
 	"strconv"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
@@ -33,27 +33,10 @@ func CreateParticipantTable(stub *shim.ChaincodeStub) error {
 //Participant Name (string)
 //Participant Type (string) BANK, BORROWER, LAYER
 func addParticipant(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
-
-	// Verify the identity of the caller
-	// Only an administrator can invoker assign
-	adminCertificate, err := stub.GetState("admin")
-	if err != nil {
-		return nil, errors.New("Failed fetching admin identity")
-	}
-
-	ok, err := isCaller(stub, adminCertificate)
-	if err != nil {
-		return nil, errors.New("Failed checking admin identity")
-	}
-	if !ok {
-		return nil, errors.New("The caller is not an administrator")
-	}
-
 	if len(args) != len(P_ColumnNames)-1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(len(P_ColumnNames)-1))
 	}
-	err = addRow(stub, ParticipantsTableName, args)
-	return nil, err
+	return nil, addRow(stub, ParticipantsTableName, args)
 }
 
 func getParticipantsQuantity(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
