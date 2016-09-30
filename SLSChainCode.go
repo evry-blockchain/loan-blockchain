@@ -235,8 +235,8 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 	if function == "filterTableByValue" {
 		return filterTableByValue(stub, args)
 	}
-	if function == "printCallerSertificate" {
-		return t.printCallerSertificate(stub)
+	if function == "printCallerCertificate" {
+		return t.printCallerCertificate(stub)
 	}
 	//========================================================================
 
@@ -245,7 +245,7 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 	return nil, errors.New("Received unknown function query")
 }
 
-func (t *SimpleChaincode) printCallerSertificate(stub *shim.ChaincodeStub) ([]byte, error) {
+func (t *SimpleChaincode) printCallerCertificate(stub *shim.ChaincodeStub) ([]byte, error) {
 	// Verify the identity of the caller
 	// Only an administrator can add Participant
 	//###########################################
@@ -281,7 +281,7 @@ func (t *SimpleChaincode) printCallerSertificate(stub *shim.ChaincodeStub) ([]by
 	fmt.Printf("Timestamp: %v\n\n", timestamp)
 
 	//###########################################
-	return nil, err
+	return callerMetadata, err
 }
 
 func (t *SimpleChaincode) populateInitialData(stub *shim.ChaincodeStub) error {
