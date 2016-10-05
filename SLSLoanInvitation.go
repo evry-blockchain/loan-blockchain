@@ -29,7 +29,7 @@ var LI_ColumnNames []string
 //
 // ============================================================================================================================
 
-func CreateLoanInvitationTable(stub shim.ChaincodeStubInterface) error {
+func CreateLoanInvitationTable(stub *shim.ChaincodeStub) error {
 	LI_ColumnNames = []string{
 		LI_LoanInvitationIDColName, LI_ArrangerBankIDColName, LI_BorrowerIDColName,
 		LI_LoanRequestIDColName, LI_LoanTermColName, LI_AmountColName,
@@ -37,18 +37,23 @@ func CreateLoanInvitationTable(stub shim.ChaincodeStubInterface) error {
 	return createTable(stub, LoanInvitationsTableName, LI_ColumnNames)
 }
 
-func addLoanInvitation(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func addLoanInvitation(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	if len(args) != len(LI_ColumnNames)-1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(len(LI_ColumnNames)-1))
+		return nil, errors.New("Incorrect number of arguments in addLoanInvitation func. Expecting " + strconv.Itoa(len(LI_ColumnNames)-1))
 	}
-	err := addRow(stub, LoanInvitationsTableName, args)
-	return nil, err
+
+	check, err := checkRowPermissionsByBankId(stub, args[0])
+	if !check {
+		return nil, errors.New("Failed checking security in addLoanInvitation func or returned false: " + err.Error())
+	}
+
+	return nil, addRow(stub, LoanInvitationsTableName, args)
 }
 
-func getLoanInvitationsQuantity(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func getLoanInvitationsQuantity(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	return countTableRows(stub, []string{LoanInvitationsTableName})
 }
 
-func getLoanInvitationsList(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func getLoanInvitationsList(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	return filterTableByValue(stub, []string{LoanInvitationsTableName})
 }

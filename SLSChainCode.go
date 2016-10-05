@@ -27,6 +27,8 @@ import (
 type SimpleChaincode struct {
 }
 
+const isAuthenticationEnabled = false
+
 // ============================================================================================================================
 // Main
 // ============================================================================================================================
@@ -38,7 +40,7 @@ func main() {
 }
 
 // Init resets all the things
-func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 
 	err := CreateParticipantTable(stub)
 	if err != nil {
@@ -73,13 +75,13 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	if err != nil {
 		return nil, errors.New("Failed creating LoanSale table: " + err.Error())
 	}
-	err = CreateLoanShareNegotiationTable(stub)
+	err = CreateLoanNegotiationTable(stub)
 	if err != nil {
-		return nil, errors.New("Failed creating CreateLoanShareNegotiation table: " + err.Error())
+		return nil, errors.New("Failed creating CreateLoanNegotiation table: " + err.Error())
 	}
 	err = createAccountTable(stub)
 	if err != nil {
-		return nil, errors.New("Failed creating CreateLoanShareNegotiation table: " + err.Error())
+		return nil, errors.New("Failed creating CreateLoanNegotiation table: " + err.Error())
 	}
 
 	t.populateInitialData(stub)
@@ -88,7 +90,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 }
 
 // Invoke is our entry point to invoke a chaincode function
-func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 	fmt.Println("invoke is running " + function)
 
 	// Handle different functions
@@ -119,8 +121,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 	if function == "addLoanSale" {
 		return addLoanSale(stub, args)
 	}
-	if function == "addLoanShareNegotiation" {
-		return addLoanShareNegotiation(stub, args)
+	if function == "addLoanNegotiation" {
+		return addLoanNegotiation(stub, args)
 	}
 
 	//Account
@@ -142,7 +144,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 }
 
 // Query is our entry point for queries
-func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 	fmt.Println("query is running " + function)
 
 	// Handle different functions
@@ -212,11 +214,11 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	}
 
 	//Loan Share Negotiation
-	if function == "getLoanShareNegotiationsQuantity" { //read a variable
-		return getLoanShareNegotiationsQuantity(stub, args)
+	if function == "getLoanNegotiationsQuantity" { //read a variable
+		return getLoanNegotiationsQuantity(stub, args)
 	}
-	if function == "getLoanShareNegotiationsList" {
-		return getLoanShareNegotiationsList(stub, args)
+	if function == "getLoanNegotiationsList" {
+		return getLoanNegotiationsList(stub, args)
 	}
 
 	//Account
@@ -235,10 +237,9 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	if function == "filterTableByValue" {
 		return filterTableByValue(stub, args)
 	}
-	if function == "printCallerCertificate" {
+	/*if function == "printCallerCertificate" {
 		return printCallerCertificate(stub)
-	}
-
+	}*/
 	if function == "getCertAttribute" {
 		return getCertAttribute(stub, args)
 	}
@@ -249,46 +250,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	return nil, errors.New("Received unknown function query")
 }
 
-func printCallerCertificate(stub shim.ChaincodeStubInterface) ([]byte, error) {
-	// Verify the identity of the caller
-	// Only an administrator can add Participant
-	//###########################################
-
-	certificate, err := stub.GetCallerCertificate()
-	if err != nil {
-		return nil, errors.New("Failed retrieving Certificate: " + err.Error())
-	}
-	fmt.Printf("\n\nCertificate: %v\n\n", string(certificate))
-
-	callerMetadata, err := stub.GetCallerMetadata()
-	if err != nil {
-		return nil, errors.New("Failed retrieving Caller Metadata: " + err.Error())
-	}
-	fmt.Printf("Caller Metadata: %v\nCaller Metadata length:%v\n\n", string(callerMetadata), len(callerMetadata))
-
-	payload, err := stub.GetPayload()
-	if err != nil {
-		return nil, errors.New("Failed retrieving Payload: " + err.Error())
-	}
-	fmt.Printf("Payload: %v\n\n", string(payload))
-
-	binding, err := stub.GetBinding()
-	if err != nil {
-		return nil, errors.New("Failed retrieving Binding: " + err.Error())
-	}
-	fmt.Printf("Binding: %v\n\n", string(binding))
-
-	timestamp, err := stub.GetTxTimestamp()
-	if err != nil {
-		return nil, errors.New("Failed retrieving Timestamp': " + err.Error())
-	}
-	fmt.Printf("Timestamp: %v\n\n", timestamp)
-
-	//###########################################
-	return []byte("Caller Metadata: " + string(callerMetadata)), nil
-}
-
-func getCertAttribute(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func getCertAttribute(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	if len(args) != 1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 1")
 	}
@@ -303,7 +265,21 @@ func getCertAttribute(stub shim.ChaincodeStubInterface, args []string) ([]byte, 
 	return []byte("Attribute '" + attrName + "': " + string(attribute)), nil
 }
 
-func (t *SimpleChaincode) populateInitialData(stub shim.ChaincodeStubInterface) error {
+func checkAttribute(stub *shim.ChaincodeStub, attrName, attrValue string) (bool, error) {
+	if !isAuthenticationEnabled {
+		return true, nil
+	}
+	attribute, err := stub.ReadCertAttribute(attrName)
+	if err != nil {
+		return false, errors.New("Error checking role: " + err.Error())
+	}
+	if string(attribute) != attrValue {
+		return false, errors.New("Current user attribute '" + attrName + "' value is '" + string(attribute) + "' but not '" + attrValue + "'")
+	}
+	return true, nil
+}
+
+func (t *SimpleChaincode) populateInitialData(stub *shim.ChaincodeStub) error {
 
 	//Participants
 	_, _ = addParticipant(stub, []string{"Bank of Associates & Companies LTD", "Bank"})
@@ -321,8 +297,8 @@ func (t *SimpleChaincode) populateInitialData(stub shim.ChaincodeStubInterface) 
 	//Loan Request
 	// "BorrowerID", "LoanSharesAmount", "ProjectRevenue", "ProjectName", "ProjectInformation",
 	//"Company", "Website", "ContactPersonName", "ContactPersonSurname", "RequestDate", "ArrangerBankID", "Status"
-	_, _ = addLoanRequest(stub, []string{"1", "1000", "1M", "ProjectA", "ProjectA information", "CompanyA", "www.CompanyA.com", "Bill", "Gates", "10-01-2016", "1", "Pending"})
-	_, _ = addLoanRequest(stub, []string{"1", "1000", "1M", "ProjectB", "ProjectB information", "CompanyB", "www.CompanyB.com", "Peter", "Froystad", "10-01-2016", "1", "Pending"})
+	_, _ = addLoanRequest(stub, []string{"1", "1", "3000", "1M", "ProjectA", "ProjectA information", "CompanyA", "www.CompanyA.com", "John", "Smith", "10-01-2016", "Pending"})
+	_, _ = addLoanRequest(stub, []string{"1", "2", "1000", "1M", "ProjectB", "ProjectB information", "CompanyB", "www.CompanyB.com", "Peter", "Froystad", "10-01-2016", "Pending"})
 
 	//Loan Invitation
 	//"ArrangerBankID","BorrowerID","LoanRequestID","LoanTerm","Amount","InterestRate","Info","Status"
@@ -331,10 +307,10 @@ func (t *SimpleChaincode) populateInitialData(stub shim.ChaincodeStubInterface) 
 
 	//Loan Share Negotiation
 	//"InvitationID","ParticipantBankID","Amount","NegotiationStatus"
-	_, _ = addLoanShareNegotiation(stub, []string{"1", "2", "200", "Pending"})
-	_, _ = addLoanShareNegotiation(stub, []string{"1", "3", "200", "Pending"})
-	_, _ = addLoanShareNegotiation(stub, []string{"2", "1", "2000", "Pending"})
-	_, _ = addLoanShareNegotiation(stub, []string{"2", "3", "3000", "Pending"})
+	_, _ = addLoanNegotiation(stub, []string{"1", "2", "200", "Pending", ""})
+	_, _ = addLoanNegotiation(stub, []string{"1", "3", "200", "Pending", ""})
+	_, _ = addLoanNegotiation(stub, []string{"2", "1", "2000", "Pending", ""})
+	_, _ = addLoanNegotiation(stub, []string{"2", "3", "3000", "Pending", ""})
 
 	return nil
 }

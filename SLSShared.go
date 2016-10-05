@@ -9,10 +9,60 @@ import (
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
+// This function allows only single column key. Consider making it multicolumns in the future.
+func getRowByKeyValue(stub *shim.ChaincodeStub, tableName, keyValue string) (shim.Row, error) {
+	var row shim.Row
+
+	var cols []shim.Column
+	col := shim.Column{Value: &shim.Column_String_{String_: keyValue}}
+	cols = append(cols, col)
+
+	row, err := stub.GetRow(tableName, cols)
+	if err != nil {
+		return row, errors.New("An error occured while getting row in getRowByKeyValue func: " + err.Error())
+	}
+
+	fmt.Printf("\n tableName: %v, keyValue: %v", tableName, keyValue)
+
+	if row.GetColumns() == nil {
+		return row, errors.New("An error occured while getting row in getRowByKeyValue func: Key value not found")
+	}
+	return row, nil
+}
+
+func getTableColValueByKey(stub *shim.ChaincodeStub, tableName, keyValue, columnName string) (string, error) {
+	row, err := getRowByKeyValue(stub, tableName, keyValue)
+	if err != nil {
+		return "", errors.New("An error occured in getTableColValueByKey func: " + err.Error())
+	}
+
+	tbl, err := stub.GetTable(tableName)
+	if err != nil {
+		return "", errors.New("An error occured while getting table in func getTableColValueByKey: " + err.Error())
+	}
+
+	var columnValue string
+	var f bool
+
+	for i, c := range row.GetColumns() {
+		if tbl.ColumnDefinitions[i].Name == columnName {
+			columnValue = c.GetString_()
+			f = true
+			break
+		}
+	}
+
+	if !f {
+		return "", errors.New("Error in getTableColValueByKey func: Column '" + columnName + "' is missing")
+	}
+
+	return columnValue, nil
+}
+
 // This function should update single column of any table
 // If column or table does not exists it returns error
 // If filter takes quantity of rows not equal to one (zero as well) it returns error
-func updateTableField(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func updateTableField(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 
 	if len(args) != 4 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 4")
@@ -20,28 +70,18 @@ func updateTableField(stub shim.ChaincodeStubInterface, args []string) ([]byte, 
 
 	tableName, keyValue, columnName, columnNewValue := args[0], args[1], args[2], args[3]
 
-	tbl, err := stub.GetTable(tableName)
+	row, err := getRowByKeyValue(stub, tableName, keyValue)
 	if err != nil {
-		return nil, errors.New("An error occured while running updateTableField: " + err.Error())
-	}
-
-	//Delete in the future
-	fmt.Println("Table '" + tbl.Name + "' exists. Trying to update single value in '" + columnName + "' column.")
-
-	var cols []shim.Column
-	col := shim.Column{Value: &shim.Column_String_{String_: keyValue}}
-	cols = append(cols, col)
-
-	row, errR := stub.GetRow(tableName, cols)
-	if errR != nil {
-		return nil, errors.New("An error occured while running updateTableField: " + errR.Error())
-	}
-	if row.GetColumns() == nil {
-		return nil, errors.New("Key value not found")
+		return nil, errors.New("An error occured in func updateTableField: " + err.Error())
 	}
 
 	var f bool
 	var columnOldValue string
+
+	tbl, err := stub.GetTable(tableName)
+	if err != nil {
+		return nil, errors.New("An error occured while getting table in getRowByKeyValue func: " + err.Error())
+	}
 
 	// This Println is temporary for logging purposes
 	fmt.Println("====== Before update =========================")
@@ -50,8 +90,10 @@ func updateTableField(stub shim.ChaincodeStubInterface, args []string) ([]byte, 
 		fmt.Printf("Column number: '%v', Column name: '%v', Column value: '%v'\n", i, tbl.ColumnDefinitions[i].Name, c.GetString_())
 		if tbl.ColumnDefinitions[i].Name == columnName {
 			columnOldValue = c.GetString_()
+			// Consider replace row.Columns[i] = ... with c = ...
 			row.Columns[i] = &shim.Column{Value: &shim.Column_String_{String_: columnNewValue}}
 			f = true
+			// Consider add break
 		}
 	}
 
@@ -70,7 +112,7 @@ func updateTableField(stub shim.ChaincodeStubInterface, args []string) ([]byte, 
 
 	ok, errreplace := stub.ReplaceRow(tableName, row)
 	if errreplace != nil {
-		return nil, errors.New("An error occured while running updateTableField: " + errreplace.Error())
+		return nil, errors.New("An error occured while running updateTableField func: " + errreplace.Error())
 	}
 	//This check might be redundant.
 	if !ok {
@@ -82,7 +124,7 @@ func updateTableField(stub shim.ChaincodeStubInterface, args []string) ([]byte, 
 	return nil, nil
 }
 
-func countTableRows(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func countTableRows(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 
 	var numberOfArgs int = 1
 	if len(args) != numberOfArgs {
@@ -100,7 +142,7 @@ func countTableRows(stub shim.ChaincodeStubInterface, args []string) ([]byte, er
 	return []byte(strconv.Itoa(q)), nil
 }
 
-func countTableRowsInt(stub shim.ChaincodeStubInterface, tableName string) (int, error) {
+func countTableRowsInt(stub *shim.ChaincodeStub, tableName string) (int, error) {
 	// The function hangs for about 10 seconds if table Name does not exist
 	// consider a fix !!!!!!!!!!!!!!
 
@@ -125,7 +167,7 @@ func countTableRowsInt(stub shim.ChaincodeStubInterface, tableName string) (int,
 	return q, nil
 }
 
-func filterTableByValue(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func filterTableByValue(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 
 	var tableName, filterColumn, filterValue string
 	var isFiltered bool
@@ -183,7 +225,7 @@ func filterTableByValue(stub shim.ChaincodeStubInterface, args []string) ([]byte
 	return recordsetToJson(stub, tbl, rows)
 }
 
-func recordsetToJson(stub shim.ChaincodeStubInterface, tbl *shim.Table, rows []shim.Row) ([]byte, error) {
+func recordsetToJson(stub *shim.ChaincodeStub, tbl *shim.Table, rows []shim.Row) ([]byte, error) {
 
 	var ColumnNames []string
 	for _, cd := range tbl.ColumnDefinitions {
@@ -209,7 +251,7 @@ func recordsetToJson(stub shim.ChaincodeStubInterface, tbl *shim.Table, rows []s
 	return []byte(s), nil
 }
 
-func createTable(stub shim.ChaincodeStubInterface, tableName string, columns []string) error {
+func createTable(stub *shim.ChaincodeStub, tableName string, columns []string) error {
 	//not to forget delete table is it already exists
 	stub.DeleteTable(tableName)
 
@@ -228,7 +270,7 @@ func createTable(stub shim.ChaincodeStubInterface, tableName string, columns []s
 	return nil
 }
 
-func addRow(stub shim.ChaincodeStubInterface, tableName string, args []string) error {
+func addRow(stub *shim.ChaincodeStub, tableName string, args []string) error {
 
 	q, err := countTableRowsInt(stub, tableName)
 	if err != nil {
@@ -267,7 +309,7 @@ func addRow(stub shim.ChaincodeStubInterface, tableName string, args []string) e
 
 }
 
-func isCaller(stub shim.ChaincodeStubInterface, certificate []byte) (bool, error) {
+func isCaller(stub *shim.ChaincodeStub, certificate []byte) (bool, error) {
 
 	fmt.Println("Check caller...")
 
@@ -315,3 +357,64 @@ func isCaller(stub shim.ChaincodeStubInterface, certificate []byte) (bool, error
 
 	return ok, err
 }
+
+func checkRowPermissionsByBankId(stub *shim.ChaincodeStub, arrangerBankId string) (bool, error) {
+	//Admin security check
+	checkPermissionsAssigner, _ := checkAttribute(stub, "role", "assigner")
+	if checkPermissionsAssigner {
+		return true, nil
+	}
+
+	//Check bank role
+	checkPermissions, err := checkAttribute(stub, "role", "bank")
+	if !checkPermissions {
+		return false, errors.New("'role' attribute check failed or returned false: " + err.Error())
+	}
+
+	//Check if Arranger bank id is correct
+	checkPermissions, err = checkAttribute(stub, "bankid", arrangerBankId)
+	if !checkPermissions {
+		return false, errors.New("'bankid' attribute check failed or returned false: " + err.Error())
+	}
+
+	return true, nil
+}
+
+/*func printCallerCertificate(stub *shim.ChaincodeStub) ([]byte, error) {
+	// Verify the identity of the caller
+	// Only an administrator can add Participant
+	//###########################################
+
+	certificate, err := stub.GetCallerCertificate()
+	if err != nil {
+		return nil, errors.New("Failed retrieving Certificate: " + err.Error())
+	}
+	fmt.Printf("\n\nCertificate: %v\n\n", string(certificate))
+
+	callerMetadata, err := stub.GetCallerMetadata()
+	if err != nil {
+		return nil, errors.New("Failed retrieving Caller Metadata: " + err.Error())
+	}
+	fmt.Printf("Caller Metadata: %v\nCaller Metadata length:%v\n\n", string(callerMetadata), len(callerMetadata))
+
+	payload, err := stub.GetPayload()
+	if err != nil {
+		return nil, errors.New("Failed retrieving Payload: " + err.Error())
+	}
+	fmt.Printf("Payload: %v\n\n", string(payload))
+
+	binding, err := stub.GetBinding()
+	if err != nil {
+		return nil, errors.New("Failed retrieving Binding: " + err.Error())
+	}
+	fmt.Printf("Binding: %v\n\n", string(binding))
+
+	timestamp, err := stub.GetTxTimestamp()
+	if err != nil {
+		return nil, errors.New("Failed retrieving Timestamp': " + err.Error())
+	}
+	fmt.Printf("Timestamp: %v\n\n", timestamp)
+
+	//###########################################
+	return []byte("Caller Metadata: " + string(callerMetadata)), nil
+}*/
