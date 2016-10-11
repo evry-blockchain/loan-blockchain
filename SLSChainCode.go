@@ -27,7 +27,7 @@ import (
 type SimpleChaincode struct {
 }
 
-const isAuthenticationEnabled = true
+const isAuthenticationEnabled = false
 
 // ============================================================================================================================
 // Main
