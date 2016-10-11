@@ -26,13 +26,13 @@ var LSN_ColumnNames []string
 //
 // ============================================================================================================================
 
-func CreateLoanNegotiationTable(stub *shim.ChaincodeStub) error {
+func CreateLoanNegotiationTable(stub shim.ChaincodeStubInterface) error {
 	LSN_ColumnNames = []string{LSN_LoanNegotiationIDColName, LSN_LoanInvitationIDColName, LSN_ParticipantBankIDColName,
 		LSN_AmountColName, LSN_NegotiationStatusColName, LSN_ParticipantBankCommentColName}
 	return createTable(stub, LoanNegotiationsTableName, LSN_ColumnNames)
 }
 
-func addLoanNegotiation(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func addLoanNegotiation(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	if len(args) != len(LSN_ColumnNames)-1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(len(LSN_ColumnNames)-1))
 	}
@@ -51,10 +51,52 @@ func addLoanNegotiation(stub *shim.ChaincodeStub, args []string) ([]byte, error)
 	return nil, addRow(stub, LoanNegotiationsTableName, args)
 }
 
-func getLoanNegotiationsQuantity(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func getLoanNegotiationsQuantity(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	return countTableRows(stub, []string{LoanNegotiationsTableName})
 }
 
-func getLoanNegotiationsList(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func getLoanNegotiationsList(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	return filterTableByValue(stub, []string{LoanNegotiationsTableName})
+}
+
+func updateLoanNegotiationStatus(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != 2 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 2")
+	}
+
+	loanNegotiationID, newStatus := args[0], args[1]
+
+	//Check if current user has priviledges to update Loan Negotiation Status
+	participantBankId, err := getTableColValueByKey(stub, LoanNegotiationsTableName, loanNegotiationID, LSN_ParticipantBankIDColName)
+	if err != nil {
+		return nil, errors.New("Error getting Participant Bank ID in updateLoanNegotiationStatus func: " + err.Error())
+	}
+
+	check, err := checkRowPermissionsByBankId(stub, participantBankId)
+	if !check {
+		return nil, errors.New("Failed checking security in updateLoanNegotiationStatus func or returned false: " + err.Error())
+	}
+
+	return updateTableField(stub, []string{LoanNegotiationsTableName, loanNegotiationID, LSN_NegotiationStatusColName, newStatus})
+}
+
+func updateParticipantBankComment(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != 2 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 2")
+	}
+
+	loanNegotiationID, newComment := args[0], args[1]
+
+	//Check if current user has priviledges to update Loan Negotiation Comment
+	participantBankId, err := getTableColValueByKey(stub, LoanNegotiationsTableName, loanNegotiationID, LSN_ParticipantBankIDColName)
+	if err != nil {
+		return nil, errors.New("Error getting Participant Bank ID in updateLoanNegotiationStatus func: " + err.Error())
+	}
+
+	check, err := checkRowPermissionsByBankId(stub, participantBankId)
+	if !check {
+		return nil, errors.New("Failed checking security in updateParticipantBankComment func or returned false: " + err.Error())
+	}
+
+	return updateTableField(stub, []string{LoanNegotiationsTableName, loanNegotiationID, LSN_ParticipantBankCommentColName, newComment})
 }

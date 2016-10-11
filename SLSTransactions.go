@@ -27,13 +27,13 @@ var T_ColumnNames []string
 //
 // ============================================================================================================================
 
-func CreateTransactionTable(stub *shim.ChaincodeStub) error {
+func CreateTransactionTable(stub shim.ChaincodeStubInterface) error {
 	T_ColumnNames = []string{T_TransactionIDColName, T_FromAccountIDColName, T_ToAccountIDColName,
 		T_DateColName, T_TransactionTypeColName, T_TransactionRelatedEntityIDColName, T_AmountColName}
 	return createTable(stub, TransactionsTableName, T_ColumnNames)
 }
 
-func addTransaction(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func addTransaction(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	if len(args) != len(T_ColumnNames)-1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(len(T_ColumnNames)-1))
 	}
@@ -41,10 +41,10 @@ func addTransaction(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	return nil, err
 }
 
-func getTransactionsQuantity(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func getTransactionsQuantity(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	return countTableRows(stub, []string{TransactionsTableName})
 }
 
-func getTransactionsList(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func getTransactionsList(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	return filterTableByValue(stub, []string{TransactionsTableName})
 }
