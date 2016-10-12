@@ -326,7 +326,7 @@ func addRow(stub *shim.ChaincodeStub, tableName string, args []string) error {
 }
 
 // !!! This function allows only single column key. Consider making it multicolumns in the future. !!!
-func deleteRow(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func deleteRow(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	var numberOfArgs int = 2
 	if len(args) != numberOfArgs {
 		return nil, errors.New("Incorrect number of arguments. Expecting: " + strconv.Itoa(numberOfArgs))
