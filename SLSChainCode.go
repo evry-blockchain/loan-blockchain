@@ -40,7 +40,7 @@ func main() {
 }
 
 // Init resets all the things
-func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 
 	err := CreateParticipantTable(stub)
 	if err != nil {
@@ -90,7 +90,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 }
 
 // Invoke is our entry point to invoke a chaincode function
-func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 	fmt.Println("invoke is running " + function)
 
 	// Handle different functions
@@ -160,10 +160,15 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return updateAccountAmount(stub, args)
 	}
 
-	// This function should not be invoked directly in the future!!!!!
+	//========================================================================
+	// This functions should not be PROBABLY invoked directly in the future!!!!!!!!!!!!!!!!!!!!
 	if function == "updateTableField" {
 		return updateTableField(stub, args)
 	}
+	if function == "deleteRow" {
+		return deleteRow(stub, args)
+	}
+	//========================================================================
 
 	fmt.Println("invoke did not find func: " + function) //error
 
@@ -171,7 +176,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 }
 
 // Query is our entry point for queries
-func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
 	fmt.Println("query is running " + function)
 
 	// Handle different functions
@@ -185,6 +190,10 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	if function == "getParticipantsByType" {
 		return getParticipantsByType(stub, args)
 	}
+	if function == "getParticipantsByKey" {
+		return getParticipantsByKey(stub, args)
+	}
+
 	//Loans
 	if function == "getLoansQuantity" {
 		return getLoansQuantity(stub, args)
@@ -192,6 +201,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	if function == "getLoansList" {
 		return getLoansList(stub, args)
 	}
+
 	//LoanShares
 	if function == "getLoanSharesQuantity" {
 		return getLoanSharesQuantity(stub, args)
@@ -207,6 +217,9 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	if function == "getLoanRequestsList" {
 		return getLoanRequestsList(stub, args)
 	}
+	if function == "getLoanRequestByKey" {
+		return getLoanRequestByKey(stub, args)
+	}
 
 	//LoanInvitation
 	if function == "getLoanInvitationsQuantity" { //read a variable
@@ -214,6 +227,9 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	}
 	if function == "getLoanInvitationsList" {
 		return getLoanInvitationsList(stub, args)
+	}
+	if function == "getLoanInvitationByKey" {
+		return getLoanInvitationByKey(stub, args)
 	}
 
 	//Transactions
@@ -240,12 +256,15 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 		return getLoanSalesList(stub, args)
 	}
 
-	//Loan Share Negotiation
+	//Loan Negotiation
 	if function == "getLoanNegotiationsQuantity" { //read a variable
 		return getLoanNegotiationsQuantity(stub, args)
 	}
 	if function == "getLoanNegotiationsList" {
 		return getLoanNegotiationsList(stub, args)
+	}
+	if function == "getLoanNegotiationByKey" {
+		return getLoanNegotiationByKey(stub, args)
 	}
 
 	//Account
@@ -257,7 +276,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	}
 
 	//========================================================================
-	// This function should not be invoked directly in the future!!!!!!!!!!!!!!!!!!!!
+	// This functions should not be PROBABLY invoked directly in the future!!!!!!!!!!!!!!!!!!!!
 	if function == "countTableRows" {
 		return countTableRows(stub, args)
 	}
@@ -277,7 +296,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	return nil, errors.New("Received unknown function query")
 }
 
-func getCertAttribute(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func getCertAttribute(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	if len(args) != 1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 1")
 	}
@@ -292,7 +311,7 @@ func getCertAttribute(stub shim.ChaincodeStubInterface, args []string) ([]byte, 
 	return []byte("Attribute '" + attrName + "': " + string(attribute)), nil
 }
 
-func checkAttribute(stub shim.ChaincodeStubInterface, attrName, attrValue string) (bool, error) {
+func checkAttribute(stub *shim.ChaincodeStub, attrName, attrValue string) (bool, error) {
 	if !isAuthenticationEnabled {
 		return true, nil
 	}
@@ -306,7 +325,7 @@ func checkAttribute(stub shim.ChaincodeStubInterface, attrName, attrValue string
 	return true, nil
 }
 
-func (t *SimpleChaincode) populateInitialData(stub shim.ChaincodeStubInterface) error {
+func (t *SimpleChaincode) populateInitialData(stub *shim.ChaincodeStub) error {
 
 	//Participants
 	_, _ = addParticipant(stub, []string{"Bank of Associates & Companies LTD", "Bank"})

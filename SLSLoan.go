@@ -29,14 +29,14 @@ var L_ColumnNames []string
 //
 // ============================================================================================================================
 
-func CreateLoanTable(stub shim.ChaincodeStubInterface) error {
+func CreateLoanTable(stub *shim.ChaincodeStub) error {
 	L_ColumnNames = []string{L_LoanIDColName, L_ArrangerBankIDColName, L_BorrowerIDColName,
 		L_AmountColName, L_InterestRateColName, L_InterestTermColName,
 		L_FeeColName, L_AgreementDateColName, L_NegotiationStatusColName}
 	return createTable(stub, LoansTableName, L_ColumnNames)
 }
 
-func addLoan(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func addLoan(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	if len(args) != len(L_ColumnNames)-1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(len(L_ColumnNames)-1))
 	}
@@ -44,10 +44,10 @@ func addLoan(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	return nil, err
 }
 
-func getLoansQuantity(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func getLoansQuantity(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	return countTableRows(stub, []string{LoansTableName})
 }
 
-func getLoansList(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func getLoansList(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	return filterTableByValue(stub, []string{LoansTableName})
 }

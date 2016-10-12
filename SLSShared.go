@@ -9,8 +9,8 @@ import (
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
-// This function allows only single column key. Consider making it multicolumns in the future.
-func getRowByKeyValue(stub shim.ChaincodeStubInterface, tableName, keyValue string) (shim.Row, error) {
+// !!! This function allows only single column key. Consider making it multicolumns in the future. !!!
+func getRowByKeyValue(stub *shim.ChaincodeStub, tableName, keyValue string) (shim.Row, error) {
 	var row shim.Row
 
 	var cols []shim.Column
@@ -30,7 +30,7 @@ func getRowByKeyValue(stub shim.ChaincodeStubInterface, tableName, keyValue stri
 	return row, nil
 }
 
-func getTableColValueByKey(stub shim.ChaincodeStubInterface, tableName, keyValue, columnName string) (string, error) {
+func getTableColValueByKey(stub *shim.ChaincodeStub, tableName, keyValue, columnName string) (string, error) {
 	row, err := getRowByKeyValue(stub, tableName, keyValue)
 	if err != nil {
 		return "", errors.New("An error occured in getTableColValueByKey func: " + err.Error())
@@ -62,7 +62,7 @@ func getTableColValueByKey(stub shim.ChaincodeStubInterface, tableName, keyValue
 // This function should update single column of any table
 // If column or table does not exists it returns error
 // If filter takes quantity of rows not equal to one (zero as well) it returns error
-func updateTableField(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func updateTableField(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 
 	if len(args) != 4 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 4")
@@ -124,7 +124,7 @@ func updateTableField(stub shim.ChaincodeStubInterface, args []string) ([]byte, 
 	return nil, nil
 }
 
-func countTableRows(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func countTableRows(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 
 	var numberOfArgs int = 1
 	if len(args) != numberOfArgs {
@@ -142,7 +142,7 @@ func countTableRows(stub shim.ChaincodeStubInterface, args []string) ([]byte, er
 	return []byte(strconv.Itoa(q)), nil
 }
 
-func countTableRowsInt(stub shim.ChaincodeStubInterface, tableName string) (int, error) {
+func countTableRowsInt(stub *shim.ChaincodeStub, tableName string) (int, error) {
 	// The function hangs for about 10 seconds if table Name does not exist
 	// consider a fix !!!!!!!!!!!!!!
 
@@ -167,7 +167,7 @@ func countTableRowsInt(stub shim.ChaincodeStubInterface, tableName string) (int,
 	return q, nil
 }
 
-func filterTableByValue(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func filterTableByValue(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 
 	var tableName, filterColumn, filterValue string
 	var isFiltered bool
@@ -225,7 +225,23 @@ func filterTableByValue(stub shim.ChaincodeStubInterface, args []string) ([]byte
 	return recordsetToJson(stub, tbl, rows)
 }
 
-func recordsetToJson(stub shim.ChaincodeStubInterface, tbl *shim.Table, rows []shim.Row) ([]byte, error) {
+func filterTableByKey(stub *shim.ChaincodeStub, tableName, keyValue string) ([]byte, error) {
+	row, err := getRowByKeyValue(stub, tableName, keyValue)
+	if err != nil {
+		return nil, errors.New("An error in filterTableByKey func: " + err.Error())
+	}
+	tbl, err := stub.GetTable(tableName)
+	if err != nil {
+		return nil, errors.New("An error occured while running filterTableByKey: " + err.Error())
+	}
+
+	var rows []shim.Row
+	rows = append(rows, row)
+
+	return recordsetToJson(stub, tbl, rows)
+}
+
+func recordsetToJson(stub *shim.ChaincodeStub, tbl *shim.Table, rows []shim.Row) ([]byte, error) {
 
 	var ColumnNames []string
 	for _, cd := range tbl.ColumnDefinitions {
@@ -251,7 +267,7 @@ func recordsetToJson(stub shim.ChaincodeStubInterface, tbl *shim.Table, rows []s
 	return []byte(s), nil
 }
 
-func createTable(stub shim.ChaincodeStubInterface, tableName string, columns []string) error {
+func createTable(stub *shim.ChaincodeStub, tableName string, columns []string) error {
 	//not to forget delete table is it already exists
 	stub.DeleteTable(tableName)
 
@@ -270,7 +286,7 @@ func createTable(stub shim.ChaincodeStubInterface, tableName string, columns []s
 	return nil
 }
 
-func addRow(stub shim.ChaincodeStubInterface, tableName string, args []string) error {
+func addRow(stub *shim.ChaincodeStub, tableName string, args []string) error {
 
 	q, err := countTableRowsInt(stub, tableName)
 	if err != nil {
@@ -283,7 +299,7 @@ func addRow(stub shim.ChaincodeStubInterface, tableName string, args []string) e
 	colDefs := tbl.ColumnDefinitions
 	colsQty := len(colDefs)
 
-	//Add Account to ledger table
+	//Add row to ledger table
 	var cols []*shim.Column
 	cols = append(cols, &shim.Column{Value: &shim.Column_String_{String_: qstr}})
 	for i := 1; i <= colsQty-1; i++ {
@@ -309,7 +325,29 @@ func addRow(stub shim.ChaincodeStubInterface, tableName string, args []string) e
 
 }
 
-func isCaller(stub shim.ChaincodeStubInterface, certificate []byte) (bool, error) {
+// !!! This function allows only single column key. Consider making it multicolumns in the future. !!!
+func deleteRow(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	var numberOfArgs int = 2
+	if len(args) != numberOfArgs {
+		return nil, errors.New("Incorrect number of arguments. Expecting: " + strconv.Itoa(numberOfArgs))
+	}
+
+	tableName, keyValue := args[0], args[1]
+	var cols []shim.Column
+	col := shim.Column{Value: &shim.Column_String_{String_: keyValue}}
+	cols = append(cols, col)
+
+	err := stub.DeleteRow(tableName, cols)
+
+	if err != nil {
+		return nil, errors.New("Failed to delete row with key '" + keyValue + "' from '" + tableName + "' table: " + err.Error())
+	}
+
+	fmt.Println("Successfuly deleted row with key '" + keyValue + "' from '" + tableName + "' table if any exists")
+	return nil, nil
+}
+
+func isCaller(stub *shim.ChaincodeStub, certificate []byte) (bool, error) {
 
 	fmt.Println("Check caller...")
 
@@ -358,7 +396,7 @@ func isCaller(stub shim.ChaincodeStubInterface, certificate []byte) (bool, error
 	return ok, err
 }
 
-func checkRowPermissionsByBankId(stub shim.ChaincodeStubInterface, arrangerBankId string) (bool, error) {
+func checkRowPermissionsByBankId(stub *shim.ChaincodeStub, arrangerBankId string) (bool, error) {
 	//Admin security check
 	checkPermissionsAssigner, _ := checkAttribute(stub, "role", "assigner")
 	if checkPermissionsAssigner {
@@ -380,7 +418,7 @@ func checkRowPermissionsByBankId(stub shim.ChaincodeStubInterface, arrangerBankI
 	return true, nil
 }
 
-/*func printCallerCertificate(stub shim.ChaincodeStubInterface) ([]byte, error) {
+/*func printCallerCertificate(stub *shim.ChaincodeStub) ([]byte, error) {
 	// Verify the identity of the caller
 	// Only an administrator can add Participant
 	//###########################################

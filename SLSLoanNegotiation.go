@@ -26,13 +26,13 @@ var LSN_ColumnNames []string
 //
 // ============================================================================================================================
 
-func CreateLoanNegotiationTable(stub shim.ChaincodeStubInterface) error {
+func CreateLoanNegotiationTable(stub *shim.ChaincodeStub) error {
 	LSN_ColumnNames = []string{LSN_LoanNegotiationIDColName, LSN_LoanInvitationIDColName, LSN_ParticipantBankIDColName,
 		LSN_AmountColName, LSN_NegotiationStatusColName, LSN_ParticipantBankCommentColName}
 	return createTable(stub, LoanNegotiationsTableName, LSN_ColumnNames)
 }
 
-func addLoanNegotiation(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func addLoanNegotiation(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	if len(args) != len(LSN_ColumnNames)-1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(len(LSN_ColumnNames)-1))
 	}
@@ -51,15 +51,15 @@ func addLoanNegotiation(stub shim.ChaincodeStubInterface, args []string) ([]byte
 	return nil, addRow(stub, LoanNegotiationsTableName, args)
 }
 
-func getLoanNegotiationsQuantity(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func getLoanNegotiationsQuantity(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	return countTableRows(stub, []string{LoanNegotiationsTableName})
 }
 
-func getLoanNegotiationsList(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func getLoanNegotiationsList(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	return filterTableByValue(stub, []string{LoanNegotiationsTableName})
 }
 
-func updateLoanNegotiationStatus(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func updateLoanNegotiationStatus(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	if len(args) != 2 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 2")
 	}
@@ -80,7 +80,7 @@ func updateLoanNegotiationStatus(stub shim.ChaincodeStubInterface, args []string
 	return updateTableField(stub, []string{LoanNegotiationsTableName, loanNegotiationID, LSN_NegotiationStatusColName, newStatus})
 }
 
-func updateParticipantBankComment(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+func updateParticipantBankComment(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	if len(args) != 2 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 2")
 	}
@@ -99,4 +99,12 @@ func updateParticipantBankComment(stub shim.ChaincodeStubInterface, args []strin
 	}
 
 	return updateTableField(stub, []string{LoanNegotiationsTableName, loanNegotiationID, LSN_ParticipantBankCommentColName, newComment})
+}
+
+func getLoanNegotiationByKey(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+	if len(args) != 1 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 1")
+	}
+	keyValue := args[0]
+	return filterTableByKey(stub, LoanNegotiationsTableName, keyValue)
 }
