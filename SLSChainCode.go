@@ -40,7 +40,7 @@ func main() {
 }
 
 // Init resets all the things
-func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 
 	err := CreateParticipantTable(stub)
 	if err != nil {
@@ -90,7 +90,7 @@ func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args [
 }
 
 // Invoke is our entry point to invoke a chaincode function
-func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Println("invoke is running " + function)
 
 	// Handle different functions
@@ -176,7 +176,7 @@ func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args
 }
 
 // Query is our entry point for queries
-func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args []string) ([]byte, error) {
+func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Println("query is running " + function)
 
 	// Handle different functions
@@ -308,7 +308,7 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 	return nil, errors.New("Received unknown function query")
 }
 
-func getCertAttribute(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
+func getCertAttribute(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	if len(args) != 1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 1")
 	}
@@ -323,7 +323,7 @@ func getCertAttribute(stub *shim.ChaincodeStub, args []string) ([]byte, error) {
 	return []byte("Attribute '" + attrName + "': " + string(attribute)), nil
 }
 
-func checkAttribute(stub *shim.ChaincodeStub, attrName, attrValue string) (bool, error) {
+func checkAttribute(stub shim.ChaincodeStubInterface, attrName, attrValue string) (bool, error) {
 	if !isAuthenticationEnabled {
 		return true, nil
 	}
@@ -337,7 +337,7 @@ func checkAttribute(stub *shim.ChaincodeStub, attrName, attrValue string) (bool,
 	return true, nil
 }
 
-func (t *SimpleChaincode) populateInitialData(stub *shim.ChaincodeStub) error {
+func (t *SimpleChaincode) populateInitialData(stub shim.ChaincodeStubInterface) error {
 
 	//Participants
 	_, _ = addParticipant(stub, []string{"Bank of Associates & Companies LTD", "Bank"})
@@ -354,21 +354,23 @@ func (t *SimpleChaincode) populateInitialData(stub *shim.ChaincodeStub) error {
 
 	//Loan Request
 	// "BorrowerID", "LoanSharesAmount", "ProjectRevenue", "ProjectName", "ProjectInformation",
-	//"Company", "Website", "ContactPersonName", "ContactPersonSurname", "RequestDate", "ArrangerBankID", "Status"
-	_, _ = addLoanRequest(stub, []string{"1", "1", "3000", "1M", "ProjectA", "ProjectA information", "CompanyA", "www.CompanyA.com", "John", "Smith", "10-01-2016", "Pending"})
-	_, _ = addLoanRequest(stub, []string{"1", "2", "1000", "1M", "ProjectB", "ProjectB information", "CompanyB", "www.CompanyB.com", "Peter", "Froystad", "10-01-2016", "Pending"})
+	//"Company", "Website", "ContactPersonName", "ContactPersonSurname", "RequestDate",
+	//"ArrangerBankID", "Status", "MarketAndIndustry"
+	_, _ = addLoanRequest(stub, []string{"1", "1", "3000", "1M", "ProjectA", "ProjectA information", "CompanyA", "www.CompanyA.com", "John", "Smith", "10-01-2016", "Pending", "SomeMarketAndIndustryA"})
+	_, _ = addLoanRequest(stub, []string{"1", "2", "1000", "1M", "ProjectB", "ProjectB information", "CompanyB", "www.CompanyB.com", "Peter", "Froystad", "10-01-2016", "Pending", "SomeMarketAndIndustryB"})
 
 	//Loan Invitation
-	//"ArrangerBankID","BorrowerID","LoanRequestID","LoanTerm","Amount","InterestRate","Info","Status"
-	_, _ = addLoanInvitation(stub, []string{"1", "1", "1", "2 years", "400", "3%", "Company A loan invitation info", "Pending"})
-	_, _ = addLoanInvitation(stub, []string{"2", "3", "2", "3 years", "5000", "0.5%", "Company B loan invitation info", "Accepted"})
+	//"ArrangerBankID","BorrowerID","LoanRequestID","LoanTerm","Amount","InterestRate","Info",
+	//"Status", "Assets", "Convenants"
+	_, _ = addLoanInvitation(stub, []string{"1", "1", "1", "2 years", "400", "3%", "Company A loan invitation info", "Pending", "Assets A", "Convenats A"})
+	_, _ = addLoanInvitation(stub, []string{"2", "3", "2", "3 years", "5000", "0.5%", "Company B loan invitation info", "Accepted", "Assets B", "Convenats B"})
 
 	//Loan Share Negotiation
-	//"InvitationID","ParticipantBankID","Amount","NegotiationStatus"
-	_, _ = addLoanNegotiation(stub, []string{"1", "2", "200", "Pending", ""})
-	_, _ = addLoanNegotiation(stub, []string{"1", "3", "200", "Pending", ""})
-	_, _ = addLoanNegotiation(stub, []string{"2", "1", "2000", "Pending", ""})
-	_, _ = addLoanNegotiation(stub, []string{"2", "3", "3000", "Pending", ""})
+	//"InvitationID","ParticipantBankID","Amount","NegotiationStatus", "ParticipantBankComment", "Date"
+	_, _ = addLoanNegotiation(stub, []string{"1", "2", "200", "Pending", "Participant Bank Comment A", "11-01-2016"})
+	_, _ = addLoanNegotiation(stub, []string{"1", "3", "200", "Pending", "Participant Bank Comment A", "12-01-2016"})
+	_, _ = addLoanNegotiation(stub, []string{"2", "1", "2000", "Pending", "Participant Bank Comment B", "21-01-2016"})
+	_, _ = addLoanNegotiation(stub, []string{"2", "3", "3000", "Pending", "Participant Bank Comment B", "22-01-2016"})
 
 	return nil
 }
