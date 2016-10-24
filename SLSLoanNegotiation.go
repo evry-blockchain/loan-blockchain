@@ -39,18 +39,50 @@ func addLoanNegotiation(stub shim.ChaincodeStubInterface, args []string) ([]byte
 		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(LoanNegotiationsTableColsQty-1))
 	}
 
-	//Check if related Loan Invitation exists and Arranger BankId is correct in it
+	///////////////////////////Constraint check////////////////////////////
+	//Check if related Loan Invitation exists
 	arrangerBankId, err := getTableColValueByKey(stub, LoanInvitationsTableName, args[0], LI_ArrangerBankIDColName) // 0 is a hardcode position of LN_LoanInvitationIDColName argument. Consider avoid hardcoding in the future.
 	if err != nil {
 		return nil, errors.New("Error getting related Loan Invitation in addLoanNegotiation func: " + err.Error())
 	}
 
+	///////////////////////////Security check////////////////////////////
 	check, err := checkRowPermissionsByBankId(stub, arrangerBankId)
 	if !check {
 		return nil, errors.New("Failed checking security in addLoanNegotiation func or returned false: " + err.Error())
 	}
+	////////////////////////////////////////////////////////////////////
 
 	return nil, addRow(stub, LoanNegotiationsTableName, args)
+}
+
+func updateLoanNegotiation(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != LoanNegotiationsTableColsQty {
+		return nil, errors.New("Incorrect number of arguments in updateLoanRequest func. Expecting " + strconv.Itoa(LoanNegotiationsTableColsQty))
+	}
+
+	loanNegotiationID := args[0]
+
+	///////////////////////////Security check////////////////////////////
+	check, err := checkLoanNegotiationRowPermissionsByBankId(stub, loanNegotiationID)
+	if !check {
+		return nil, errors.New("Failed checking security in updateLoanNegotiation or returned false: " + err.Error())
+	}
+	////////////////////////////////////////////////////////////////////
+
+	tbl, err := stub.GetTable(LoanNegotiationsTableName)
+	if err != nil {
+		return nil, errors.New("An error occured while running updateLoanNegotiation: " + err.Error())
+	}
+
+	for i, cd := range tbl.ColumnDefinitions {
+		_, err := updateTableField(stub, []string{LoanNegotiationsTableName, loanNegotiationID, cd.Name, args[i]})
+		if err != nil {
+			return nil, errors.New("Failed updating field '" + cd.Name + "' in updateLoanNegotiation func: " + err.Error())
+		}
+	}
+
+	return nil, nil
 }
 
 func getLoanNegotiationsQuantity(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
@@ -68,16 +100,12 @@ func updateLoanNegotiationStatus(stub shim.ChaincodeStubInterface, args []string
 
 	loanNegotiationID, newStatus := args[0], args[1]
 
-	//Check if current user has priviledges to update Loan Negotiation Status
-	participantBankId, err := getTableColValueByKey(stub, LoanNegotiationsTableName, loanNegotiationID, LN_ParticipantBankIDColName)
-	if err != nil {
-		return nil, errors.New("Error getting Participant Bank ID in updateLoanNegotiationStatus func: " + err.Error())
-	}
-
-	check, err := checkRowPermissionsByBankId(stub, participantBankId)
+	///////////////////////////Security check////////////////////////////
+	check, err := checkLoanNegotiationRowPermissionsByBankId(stub, loanNegotiationID)
 	if !check {
-		return nil, errors.New("Failed checking security in updateLoanNegotiationStatus func or returned false: " + err.Error())
+		return nil, errors.New("Failed checking security in updateLoanNegotiationStatus or returned false: " + err.Error())
 	}
+	/////////////////////////////////////////////////////////////////////
 
 	return updateTableField(stub, []string{LoanNegotiationsTableName, loanNegotiationID, LN_NegotiationStatusColName, newStatus})
 }
@@ -89,16 +117,12 @@ func updateParticipantBankComment(stub shim.ChaincodeStubInterface, args []strin
 
 	loanNegotiationID, newComment := args[0], args[1]
 
-	//Check if current user has priviledges to update Loan Negotiation Comment
-	participantBankId, err := getTableColValueByKey(stub, LoanNegotiationsTableName, loanNegotiationID, LN_ParticipantBankIDColName)
-	if err != nil {
-		return nil, errors.New("Error getting Participant Bank ID in updateLoanNegotiationStatus func: " + err.Error())
-	}
-
-	check, err := checkRowPermissionsByBankId(stub, participantBankId)
+	///////////////////////////Security check////////////////////////////
+	check, err := checkLoanNegotiationRowPermissionsByBankId(stub, loanNegotiationID)
 	if !check {
-		return nil, errors.New("Failed checking security in updateParticipantBankComment func or returned false: " + err.Error())
+		return nil, errors.New("Failed checking security in updateParticipantBankComment or returned false: " + err.Error())
 	}
+	/////////////////////////////////////////////////////////////////////
 
 	return updateTableField(stub, []string{LoanNegotiationsTableName, loanNegotiationID, LN_ParticipantBankCommentColName, newComment})
 }
@@ -117,4 +141,18 @@ func getLoanNegotiationsMaxKey(stub shim.ChaincodeStubInterface, args []string) 
 		return nil, errors.New("Error in getLoanNegotiationsMaxKey func: " + err.Error())
 	}
 	return maxKey, nil
+}
+
+func checkLoanNegotiationRowPermissionsByBankId(stub shim.ChaincodeStubInterface, loanNegotiationID string) (bool, error) {
+	participantBankId, err := getTableColValueByKey(stub, LoanNegotiationsTableName, loanNegotiationID, LN_ParticipantBankIDColName)
+	if err != nil {
+		return false, errors.New("Error getting Participant Bank ID in checkLoanNegotiationRowPermissionsByBankId func: " + err.Error())
+	}
+
+	check, err := checkRowPermissionsByBankId(stub, participantBankId)
+	if !check {
+		return false, errors.New("Failed checking security in checkLoanNegotiationRowPermissionsByBankId func or returned false: " + err.Error())
+	}
+
+	return true, nil
 }

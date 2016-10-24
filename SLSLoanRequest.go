@@ -47,12 +47,43 @@ func addLoanRequest(stub shim.ChaincodeStubInterface, args []string) ([]byte, er
 		return nil, errors.New("Incorrect number of arguments in addLoanRequest func. Expecting " + strconv.Itoa(LoanRequestsTableColsQty-1))
 	}
 
+	///////////////////////////Security check////////////////////////////
 	check, err := checkRowPermissionsByBankId(stub, args[1])
 	if !check {
 		return nil, errors.New("Failed checking security in addLoanRequest func or returned false: " + err.Error())
 	}
+	/////////////////////////////////////////////////////////////////
 
 	return nil, addRow(stub, LoanRequestsTableName, args)
+}
+
+func updateLoanRequest(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != LoanRequestsTableColsQty {
+		return nil, errors.New("Incorrect number of arguments in updateLoanRequest func. Expecting " + strconv.Itoa(LoanRequestsTableColsQty))
+	}
+
+	loanRequestID := args[0]
+
+	///////////////////////////Security check////////////////////////////
+	check, err := checkLoanRequestRowPermissionsByBankId(stub, loanRequestID)
+	if !check {
+		return nil, errors.New("Failed checking security in updateLoanRequest or returned false: " + err.Error())
+	}
+	/////////////////////////////////////////////////////////////////////
+
+	tbl, err := stub.GetTable(LoanRequestsTableName)
+	if err != nil {
+		return nil, errors.New("An error occured while running updateLoanRequest: " + err.Error())
+	}
+
+	for i, cd := range tbl.ColumnDefinitions {
+		_, err := updateTableField(stub, []string{LoanRequestsTableName, loanRequestID, cd.Name, args[i]})
+		if err != nil {
+			return nil, errors.New("Failed updating field '" + cd.Name + "' in updateLoanRequest func: " + err.Error())
+		}
+	}
+
+	return nil, nil
 }
 
 func getLoanRequestsQuantity(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
@@ -77,4 +108,18 @@ func getLoanRequestsMaxKey(stub shim.ChaincodeStubInterface, args []string) ([]b
 		return nil, errors.New("Error in getLoanRequestsMaxKey func: " + err.Error())
 	}
 	return maxKey, nil
+}
+
+func checkLoanRequestRowPermissionsByBankId(stub shim.ChaincodeStubInterface, loanRequestID string) (bool, error) {
+	arrangerBankId, err := getTableColValueByKey(stub, LoanRequestsTableName, loanRequestID, LR_ArrangerBankIDColName)
+	if err != nil {
+		return false, errors.New("Error getting Arranger Bank ID in checkLoanRequestRowPermissionsByBankId func: " + err.Error())
+	}
+
+	check, err := checkRowPermissionsByBankId(stub, arrangerBankId)
+	if !check {
+		return false, errors.New("Failed checking security in checkLoanRequestRowPermissionsByBankId func or returned false: " + err.Error())
+	}
+
+	return true, nil
 }

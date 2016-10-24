@@ -117,6 +117,9 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 	if function == "addLoanRequest" {
 		return addLoanRequest(stub, args)
 	}
+	if function == "updateLoanRequest" {
+		return updateLoanRequest(stub, args)
+	}
 
 	//Loan Invitation
 	if function == "addLoanInvitation" {
@@ -124,6 +127,9 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 	}
 	if function == "updateLoanInvitationStatus" {
 		return updateLoanInvitationStatus(stub, args)
+	}
+	if function == "updateLoanInvitation" {
+		return updateLoanInvitation(stub, args)
 	}
 
 	//Transaction
@@ -144,6 +150,9 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 	//Loan Negotiation
 	if function == "addLoanNegotiation" {
 		return addLoanNegotiation(stub, args)
+	}
+	if function == "updateLoanNegotiation" {
+		return updateLoanNegotiation(stub, args)
 	}
 	if function == "updateLoanNegotiationStatus" {
 		return updateLoanNegotiationStatus(stub, args)
