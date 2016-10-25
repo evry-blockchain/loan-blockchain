@@ -418,6 +418,7 @@ func checkRowPermissionsByBankId(stub shim.ChaincodeStubInterface, arrangerBankI
 	return true, nil
 }
 
+// This function assumes that key is single column, which is first in the table
 func getTableMaxKey(stub shim.ChaincodeStubInterface, tableName string) ([]byte, error) {
 	// Use emty columns slice to get all rows for count
 	var cols []shim.Column

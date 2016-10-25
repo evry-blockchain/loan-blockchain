@@ -310,6 +310,12 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	if function == "getCertAttribute" {
 		return getCertAttribute(stub, args)
 	}
+	if function == "getBankId" {
+		return getBankId(stub, args)
+	}
+	if function == "getProjectsList" {
+		return getProjectsList(stub, args)
+	}
 	//========================================================================
 
 	fmt.Println("query did not find func: " + function) //error
@@ -319,17 +325,30 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 func getCertAttribute(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	if len(args) != 1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 1")
+		return nil, errors.New("Incorrect number of arguments in getCertAttribute func. Expecting 1")
 	}
 
 	attrName := args[0]
 	attribute, err := stub.ReadCertAttribute(attrName)
 	if err != nil {
-		return nil, errors.New("Failed retrieving Certificate Attribute '" + attrName + "': " + err.Error())
+		return nil, errors.New("Failed retrieving Certificate Attribute '" + attrName + "' in getCertAttribute func: " + err.Error())
 	}
-	fmt.Printf("Certificate Attribute '%v': %v\n\n", attrName, string(attribute))
 
 	return []byte("Attribute '" + attrName + "': " + string(attribute)), nil
+}
+
+func getBankId(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != 0 {
+		return nil, errors.New("Incorrect number of arguments in getBankId func. Expecting 0")
+	}
+
+	attrName := "bankid"
+	attribute, err := stub.ReadCertAttribute(attrName)
+	if err != nil {
+		return nil, errors.New("Failed retrieving Certificate Attribute '" + attrName + "' in getBankId func: " + err.Error())
+	}
+
+	return []byte(string(attribute)), nil
 }
 
 func checkAttribute(stub shim.ChaincodeStubInterface, attrName, attrValue string) (bool, error) {
