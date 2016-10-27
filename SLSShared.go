@@ -30,6 +30,96 @@ func getRowByKeyValue(stub shim.ChaincodeStubInterface, tableName, keyValue stri
 	return row, nil
 }
 
+// This function filters by one column value only
+func getRowsByColumnValue(stub shim.ChaincodeStubInterface, args []string) (*shim.Table, []shim.Row, error) {
+
+	// 1 or 3 arguments should be provided:
+	// 1 when filter is not needed: table name
+	// 3 when filter is need: table name, filter column, filter value
+
+	var tableName, filterColumn, filterValue string
+	var isFiltered bool
+
+	var tbl *shim.Table
+	var rows []shim.Row
+
+	switch l := len(args); l {
+	case 1:
+		tableName = args[0]
+		isFiltered = false
+	case 3:
+		tableName, filterColumn, filterValue = args[0], args[1], args[2]
+		isFiltered = true
+	default:
+		return tbl, rows, errors.New("Incorrect number of arguments in getRowsByColumnValue func. Expecting: 1 or 3")
+	}
+
+	tbl, err := stub.GetTable(tableName)
+	if err != nil {
+		return tbl, rows, errors.New("Error in getRowsByColumnValue func: " + err.Error())
+	}
+
+	var cols []shim.Column
+
+	rowChan, _ := stub.GetRows(tableName, cols)
+	row, ok := <-rowChan
+
+	if isFiltered {
+		var columnNumber int
+		var isColumnFound bool
+		isColumnFound = false
+
+		for i, cd := range tbl.ColumnDefinitions {
+			if cd.Name == filterColumn {
+				columnNumber = i
+				isColumnFound = true
+				break
+			}
+		}
+
+		if !isColumnFound {
+			return tbl, rows, errors.New("Column is not found in getRowsByColumnValue func: " + err.Error())
+		}
+
+		var i int
+		for ok {
+			if row.Columns[columnNumber].GetString_() == filterValue {
+				rows = append(rows, row)
+				i++
+			}
+			row, ok = <-rowChan
+		}
+	} else {
+		for ok {
+			rows = append(rows, row)
+			row, ok = <-rowChan
+		}
+	}
+
+	return tbl, rows, nil
+}
+
+// This function filters and deletes all rows by one column value only
+func deleteRowsByColumnValue(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	_, rows, err := getRowsByColumnValue(stub, args)
+
+	if err != nil {
+		return nil, errors.New("Error in deleteRowsByColumnValue func: " + err.Error())
+	}
+
+	tableName := args[0]
+
+	if err != nil {
+		return nil, errors.New("Error in deleteRowsByColumnValue func: " + err.Error())
+	}
+
+	for _, row := range rows {
+		deleteRow(stub, []string{tableName, row.Columns[0].GetString_()})
+	}
+
+	return nil, nil
+}
+
 func getTableColValueByKey(stub shim.ChaincodeStubInterface, tableName, keyValue, columnName string) (string, error) {
 	row, err := getRowByKeyValue(stub, tableName, keyValue)
 	if err != nil {
@@ -168,59 +258,10 @@ func countTableRowsInt(stub shim.ChaincodeStubInterface, tableName string) (int,
 }
 
 func filterTableByValue(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-
-	var tableName, filterColumn, filterValue string
-	var isFiltered bool
-	// 1 or 3 arguments should be provided:
-	// 1 when filter is not needed: table name
-	// 3 when filter is need: table name, filter column, filter value
-
-	switch l := len(args); l {
-	case 1:
-		tableName = args[0]
-		isFiltered = false
-	case 3:
-		tableName, filterColumn, filterValue = args[0], args[1], args[2]
-		isFiltered = true
-	default:
-		return nil, errors.New("Incorrect number of arguments. Expecting: 1 or 3")
-	}
-
-	tbl, err := stub.GetTable(tableName)
+	tbl, rows, err := getRowsByColumnValue(stub, args)
 	if err != nil {
-		return nil, errors.New("An error occured while running filterTableByValue: " + err.Error())
+		return nil, errors.New("Error in filterTableByValue func: " + err.Error())
 	}
-
-	var cols []shim.Column
-	var rows []shim.Row
-
-	rowChan, _ := stub.GetRows(tableName, cols)
-	row, ok := <-rowChan
-
-	if isFiltered {
-		var columnNumber int
-		for i, cd := range tbl.ColumnDefinitions {
-			if cd.Name == filterColumn {
-				columnNumber = i
-			}
-		}
-
-		var i int
-		for ok {
-			if row.Columns[columnNumber].GetString_() == filterValue {
-				rows = append(rows, row)
-				i++
-			}
-			row, ok = <-rowChan
-		}
-	} else {
-		for ok {
-			rows = append(rows, row)
-			row, ok = <-rowChan
-		}
-	}
-
-	//fmt.Printf("Filter table %v column %v by value %v\n Result:\nRows quantity: %v\n Rows content: %v\n", tableName, filterColumn, filterValue, i, rows)
 
 	return recordsetToJson(stub, tbl, rows)
 }

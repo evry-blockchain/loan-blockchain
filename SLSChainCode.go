@@ -84,7 +84,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 		return nil, errors.New("Failed creating CreateLoanNegotiation table: " + err.Error())
 	}
 
-	t.populateInitialData(stub)
+	populateInitialData(stub, args)
 
 	return nil, nil
 }
@@ -170,12 +170,18 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 	}
 
 	//========================================================================
-	// This functions should not be PROBABLY invoked directly in the future!!!!!!!!!!!!!!!!!!!!
+	// Specific functions
 	if function == "updateTableField" {
 		return updateTableField(stub, args)
 	}
 	if function == "deleteRow" {
 		return deleteRow(stub, args)
+	}
+	if function == "deleteRowsByColumnValue" {
+		return deleteRowsByColumnValue(stub, args)
+	}
+	if function == "populateInitialData" {
+		return populateInitialData(stub, args)
 	}
 	//========================================================================
 
@@ -297,7 +303,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	}
 
 	//========================================================================
-	// This functions should not be PROBABLY invoked directly in the future!!!!!!!!!!!!!!!!!!!!
+	// Special functions
 	if function == "countTableRows" {
 		return countTableRows(stub, args)
 	}
@@ -355,6 +361,7 @@ func checkAttribute(stub shim.ChaincodeStubInterface, attrName, attrValue string
 	if !isAuthenticationEnabled {
 		return true, nil
 	}
+	// Why stub.VerifyAttribute is not used here?????? Consider using it.
 	attribute, err := stub.ReadCertAttribute(attrName)
 	if err != nil {
 		return false, errors.New("Error checking role: " + err.Error())
@@ -365,9 +372,10 @@ func checkAttribute(stub shim.ChaincodeStubInterface, attrName, attrValue string
 	return true, nil
 }
 
-func (t *SimpleChaincode) populateInitialData(stub shim.ChaincodeStubInterface) error {
+func populateInitialData(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 
 	//Participants
+	_, _ = deleteRowsByColumnValue(stub, []string{ParticipantsTableName})
 	_, _ = addParticipant(stub, []string{"Bank of Associates & Companies LTD", "Bank"})
 	_, _ = addParticipant(stub, []string{"Connected Colaborators Bank", "Bank"})
 	_, _ = addParticipant(stub, []string{"Bank of Paper, Wilson & Bluemine LTD", "Bank"})
@@ -376,6 +384,7 @@ func (t *SimpleChaincode) populateInitialData(stub shim.ChaincodeStubInterface) 
 	_, _ = addParticipant(stub, []string{"John Smith", "Lowyer"})
 
 	//Accounts
+	_, _ = deleteRowsByColumnValue(stub, []string{AccountsTableName})
 	_, _ = addAccount(stub, []string{"1", "10000"})
 	_, _ = addAccount(stub, []string{"2", "50000"})
 	_, _ = addAccount(stub, []string{"3", "30000"})
@@ -384,21 +393,24 @@ func (t *SimpleChaincode) populateInitialData(stub shim.ChaincodeStubInterface) 
 	// "BorrowerID", "LoanSharesAmount", "ProjectRevenue", "ProjectName", "ProjectInformation",
 	//"Company", "Website", "ContactPersonName", "ContactPersonSurname", "RequestDate",
 	//"ArrangerBankID", "Status", "MarketAndIndustry"
+	_, _ = deleteRowsByColumnValue(stub, []string{LoanRequestsTableName})
 	_, _ = addLoanRequest(stub, []string{"1", "1", "3000", "1M", "ProjectA", "ProjectA information", "CompanyA", "www.CompanyA.com", "John", "Smith", "10-01-2016", "Pending", "SomeMarketAndIndustryA"})
 	_, _ = addLoanRequest(stub, []string{"1", "2", "1000", "1M", "ProjectB", "ProjectB information", "CompanyB", "www.CompanyB.com", "Peter", "Froystad", "10-01-2016", "Pending", "SomeMarketAndIndustryB"})
 
 	//Loan Invitation
 	//"ArrangerBankID","BorrowerID","LoanRequestID","LoanTerm","Amount","InterestRate","Info",
 	//"Status", "Assets", "Convenants"
+	_, _ = deleteRowsByColumnValue(stub, []string{LoanInvitationsTableName})
 	_, _ = addLoanInvitation(stub, []string{"1", "1", "1", "2 years", "400", "3%", "Company A loan invitation info", "Pending", "Assets A", "Convenats A"})
 	_, _ = addLoanInvitation(stub, []string{"2", "3", "2", "3 years", "5000", "0.5%", "Company B loan invitation info", "Accepted", "Assets B", "Convenats B"})
 
 	//Loan Share Negotiation
 	//"InvitationID","ParticipantBankID","Amount","NegotiationStatus", "ParticipantBankComment", "Date"
+	_, _ = deleteRowsByColumnValue(stub, []string{LoanNegotiationsTableName})
 	_, _ = addLoanNegotiation(stub, []string{"1", "2", "200", "Pending", "Participant Bank Comment A", "11-01-2016"})
 	_, _ = addLoanNegotiation(stub, []string{"1", "3", "200", "Pending", "Participant Bank Comment A", "12-01-2016"})
 	_, _ = addLoanNegotiation(stub, []string{"2", "1", "2000", "Pending", "Participant Bank Comment B", "21-01-2016"})
 	_, _ = addLoanNegotiation(stub, []string{"2", "3", "3000", "Pending", "Participant Bank Comment B", "22-01-2016"})
 
-	return nil
+	return nil, nil
 }
