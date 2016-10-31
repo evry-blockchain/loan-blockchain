@@ -24,5 +24,12 @@ func getProjectsList(stub shim.ChaincodeStubInterface, args []string) ([]byte, e
 			return nil, errors.New("Error getting maxKey in getProjectsList func: " + err.Error())
 		}
 	*/
+
+	err = stub.SetEvent("test string", bankid)
+
+	if err != nil {
+		return nil, errors.New("Error sending event in getProjectsList func: " + err.Error())
+	}
+
 	return filterTableByValue(stub, []string{LoanRequestsTableName, LR_ArrangerBankIDColName, string(bankid)})
 }

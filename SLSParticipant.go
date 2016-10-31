@@ -34,8 +34,9 @@ func CreateParticipantTable(stub shim.ChaincodeStubInterface) error {
 //Participant Name (string)
 //Participant Type (string) BANK, BORROWER, LAYER
 func addParticipant(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	if len(args) != ParticipantsTableColsQty-1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(ParticipantsTableColsQty-1))
+	if len(args) != ParticipantsTableColsQty-1 && len(args) != ParticipantsTableColsQty {
+		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(ParticipantsTableColsQty-1) +
+			" or " + strconv.Itoa(ParticipantsTableColsQty))
 	}
 
 	attrName := "role"

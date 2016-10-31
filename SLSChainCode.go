@@ -376,41 +376,44 @@ func populateInitialData(stub shim.ChaincodeStubInterface, args []string) ([]byt
 
 	//Participants
 	_, _ = deleteRowsByColumnValue(stub, []string{ParticipantsTableName})
-	_, _ = addParticipant(stub, []string{"Bank of Associates & Companies LTD", "Bank"})
-	_, _ = addParticipant(stub, []string{"Connected Colaborators Bank", "Bank"})
-	_, _ = addParticipant(stub, []string{"Bank of Paper, Wilson & Bluemine LTD", "Bank"})
-	_, _ = addParticipant(stub, []string{"Bill Gates", "Borrower"})
-	_, _ = addParticipant(stub, []string{"Peter Froystad", "Borrower"})
-	_, _ = addParticipant(stub, []string{"John Smith", "Lowyer"})
+	//Adding banks with keys
+	_, _ = addParticipant(stub, []string{"6", "SpareBank 1 SR-BANK", "Bank"})
+	_, _ = addParticipant(stub, []string{"7", "DNB ASA", "Bank"})
+	_, _ = addParticipant(stub, []string{"8", "Nationwide Building Society", "Bank"})
+	_, _ = addParticipant(stub, []string{"9", "JPMorgan Chase & Co", "Bank"})
+	_, _ = addParticipant(stub, []string{"10", "Barclays", "Bank"})
+	_, _ = addParticipant(stub, []string{"11", "Mizuho Bank, Ltd.", "Bank"})
 
 	//Accounts
-	_, _ = deleteRowsByColumnValue(stub, []string{AccountsTableName})
+	/*_, _ = deleteRowsByColumnValue(stub, []string{AccountsTableName})
 	_, _ = addAccount(stub, []string{"1", "10000"})
 	_, _ = addAccount(stub, []string{"2", "50000"})
-	_, _ = addAccount(stub, []string{"3", "30000"})
+	_, _ = addAccount(stub, []string{"3", "30000"})*/
 
 	//Loan Request
-	// "BorrowerID", "LoanSharesAmount", "ProjectRevenue", "ProjectName", "ProjectInformation",
+	// "BorrowerID", "ArrangerBankID", "LoanSharesAmount", "ProjectRevenue", "ProjectName", "ProjectInformation",
 	//"Company", "Website", "ContactPersonName", "ContactPersonSurname", "RequestDate",
-	//"ArrangerBankID", "Status", "MarketAndIndustry"
+	//"Status", "MarketAndIndustry"
 	_, _ = deleteRowsByColumnValue(stub, []string{LoanRequestsTableName})
-	_, _ = addLoanRequest(stub, []string{"1", "1", "3000", "1M", "ProjectA", "ProjectA information", "CompanyA", "www.CompanyA.com", "John", "Smith", "10-01-2016", "Pending", "SomeMarketAndIndustryA"})
-	_, _ = addLoanRequest(stub, []string{"1", "2", "1000", "1M", "ProjectB", "ProjectB information", "CompanyB", "www.CompanyB.com", "Peter", "Froystad", "10-01-2016", "Pending", "SomeMarketAndIndustryB"})
+	_, _ = addLoanRequest(stub, []string{"Statoil ASA", "6", "1M", "1M", "Statoil ASA project", "Statoil ASA project info", "Statoil ASA", "www.statoil.com", "John", "Smith", "10-01-2016", "Pending", "Oil industry"})
+	_, _ = addLoanRequest(stub, []string{"BP Global", "7", "1M", "1M", "BP Global project", "BP Global project info", "BP Global", "www.bp.com", "Peter", "Froystad", "10-01-2016", "Pending", "Oil industry"})
 
 	//Loan Invitation
 	//"ArrangerBankID","BorrowerID","LoanRequestID","LoanTerm","Amount","InterestRate","Info",
 	//"Status", "Assets", "Convenants"
 	_, _ = deleteRowsByColumnValue(stub, []string{LoanInvitationsTableName})
-	_, _ = addLoanInvitation(stub, []string{"1", "1", "1", "2 years", "400", "3%", "Company A loan invitation info", "Pending", "Assets A", "Convenats A"})
-	_, _ = addLoanInvitation(stub, []string{"2", "3", "2", "3 years", "5000", "0.5%", "Company B loan invitation info", "Accepted", "Assets B", "Convenats B"})
+	_, _ = addLoanInvitation(stub, []string{"6", "Statoil ASA", "1", "2 years", "400M USD", "3%", "Statoil ASA loan invitation info", "Pending", "Assets Statoil ASA", "Convenats Statoil ASA"})
+	_, _ = addLoanInvitation(stub, []string{"7", "BP Global", "2", "3 years", "750M USD", "5%", "BP Global loan invitation info", "Pending", "Assets BP Global", "Convenats BP Global"})
 
 	//Loan Share Negotiation
 	//"InvitationID","ParticipantBankID","Amount","NegotiationStatus", "ParticipantBankComment", "Date"
 	_, _ = deleteRowsByColumnValue(stub, []string{LoanNegotiationsTableName})
-	_, _ = addLoanNegotiation(stub, []string{"1", "2", "200", "Pending", "Participant Bank Comment A", "11-01-2016"})
-	_, _ = addLoanNegotiation(stub, []string{"1", "3", "200", "Pending", "Participant Bank Comment A", "12-01-2016"})
-	_, _ = addLoanNegotiation(stub, []string{"2", "1", "2000", "Pending", "Participant Bank Comment B", "21-01-2016"})
-	_, _ = addLoanNegotiation(stub, []string{"2", "3", "3000", "Pending", "Participant Bank Comment B", "22-01-2016"})
+	_, _ = addLoanNegotiation(stub, []string{"1", "6", "200 M USD", "INVITED", "Comment of SpareBank", "11-01-2016"})
+	_, _ = addLoanNegotiation(stub, []string{"1", "9", "100 M USD", "INVITED", "Comment of JPMorgan", "12-01-2016"})
+	_, _ = addLoanNegotiation(stub, []string{"1", "10", "100 M USD", "INVITED", "Comment of Barclays", "12-01-2016"})
+	_, _ = addLoanNegotiation(stub, []string{"2", "7", "250 M USD", "INVITED", "Comment of Nationwide Building Society", "21-01-2016"})
+	_, _ = addLoanNegotiation(stub, []string{"2", "9", "200 M USD", "INVITED", "Comment of JPMorgan", "22-01-2016"})
+	_, _ = addLoanNegotiation(stub, []string{"2", "11", "300 M USD", "INVITED", "Comment of Mizuho Bank, Ltd.", "22-01-2016"})
 
 	return nil, nil
 }
