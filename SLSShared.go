@@ -327,18 +327,34 @@ func createTable(stub shim.ChaincodeStubInterface, tableName string, columns []s
 	return nil
 }
 
-func addRow(stub shim.ChaincodeStubInterface, tableName string, args []string) error {
+func addRow(stub shim.ChaincodeStubInterface, tableName string, args []string, isKeyInserted bool) error {
 
-	tbl, _ := stub.GetTable(tableName)
+	tbl, err := stub.GetTable(tableName)
+	if err != nil {
+		return errors.New("Failed to add row to '" + tableName + "' table: " + err.Error())
+	}
 	colDefs := tbl.ColumnDefinitions
 	colsQty := len(colDefs)
+	argsQty := len(args)
 
 	var cols []*shim.Column
 	var keyValue string
 
-	switch len(args) {
-	// The first arg is not table key value
-	case colsQty - 1:
+	// If the first arg IS or IS NOT table key value, which should be specified in isKeyInserted
+	if isKeyInserted {
+
+		if argsQty != colsQty {
+			return errors.New("Wrong number of members in args parameter. " +
+				"Provided '" + strconv.Itoa(argsQty) + "', expected '" + strconv.Itoa(colsQty) + "'")
+		}
+
+		keyValue = args[0]
+	} else {
+
+		if argsQty != colsQty-1 {
+			return errors.New("Wrong number of members in args parameter. " +
+				"Provided '" + strconv.Itoa(argsQty) + "', expected '" + strconv.Itoa(colsQty-1) + "'")
+		}
 
 		q, err := getTableMaxKey(stub, tableName)
 		if err != nil {
@@ -351,21 +367,15 @@ func addRow(stub shim.ChaincodeStubInterface, tableName string, args []string) e
 		qint++
 		keyValue = strconv.Itoa(qint)
 
-	// The first arg is table key value
-	case colsQty:
-		keyValue = args[0]
-	default:
-		return errors.New("Failed to add row to '" + tableName + "' table: Wrong quantity of members in args array")
+		cols = append(cols, &shim.Column{Value: &shim.Column_String_{String_: keyValue}})
 	}
 
-	cols = append(cols, &shim.Column{Value: &shim.Column_String_{String_: keyValue}})
-
-	for i := 1; i <= colsQty-1; i++ {
-		cols = append(cols, &shim.Column{Value: &shim.Column_String_{String_: args[i-1]}})
+	for i := 0; i <= argsQty-1; i++ {
+		cols = append(cols, &shim.Column{Value: &shim.Column_String_{String_: args[i]}})
 	}
 
 	var ok bool
-	ok, err := stub.InsertRow(tableName, shim.Row{Columns: cols})
+	ok, err = stub.InsertRow(tableName, shim.Row{Columns: cols})
 	if err != nil {
 		return errors.New("Failed to add row to '" + tableName + "' table: " + err.Error())
 	}

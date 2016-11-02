@@ -32,7 +32,7 @@ func addAccount(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
 	if len(args) != len(A_ColumnNames)-1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(len(A_ColumnNames)-1))
 	}
-	err := addRow(stub, AccountsTableName, args)
+	err := addRow(stub, AccountsTableName, args, false)
 	return nil, err
 }
 

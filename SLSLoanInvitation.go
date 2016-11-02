@@ -52,7 +52,7 @@ func addLoanInvitation(stub shim.ChaincodeStubInterface, args []string) ([]byte,
 	}
 	/////////////////////////////////////////////////////////////////////
 
-	return nil, addRow(stub, LoanInvitationsTableName, args)
+	return nil, addRow(stub, LoanInvitationsTableName, args, false)
 }
 
 func updateLoanInvitation(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {

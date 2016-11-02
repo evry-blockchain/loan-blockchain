@@ -37,7 +37,7 @@ func addTransaction(stub shim.ChaincodeStubInterface, args []string) ([]byte, er
 	if len(args) != len(T_ColumnNames)-1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(len(T_ColumnNames)-1))
 	}
-	err := addRow(stub, TransactionsTableName, args)
+	err := addRow(stub, TransactionsTableName, args, false)
 	return nil, err
 }
 

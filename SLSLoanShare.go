@@ -36,7 +36,7 @@ func addLoanShare(stub shim.ChaincodeStubInterface, args []string) ([]byte, erro
 	if len(args) != len(LS_ColumnNames)-1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(len(LS_ColumnNames)-1))
 	}
-	err := addRow(stub, LoanSharesTableName, args)
+	err := addRow(stub, LoanSharesTableName, args, false)
 	return nil, err
 }
 
