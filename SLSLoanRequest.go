@@ -3,7 +3,7 @@ package main
 import (
 	//"encoding/json"
 	"errors"
-	//"fmt"
+	"fmt"
 	"strconv"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
@@ -122,4 +122,115 @@ func checkLoanRequestRowPermissionsByBankId(stub shim.ChaincodeStubInterface, lo
 	}
 
 	return true, nil
+}
+
+func updateLoanRequestStatus(stub shim.ChaincodeStubInterface, loanRequestID string) error {
+
+	loanInvitationIDs, err := getTableColValuesInSlice(stub, []string{LoanInvitationsTableName, LI_LoanInvitationIDColName, LI_LoanRequestIDColName, loanRequestID})
+	if err != nil {
+		return errors.New("Error in updateLoanRequestStatus func: " + err.Error())
+	}
+
+	var loanNegStatuses []string
+	for _, liID := range loanInvitationIDs {
+		lnStatuses, _ := getTableColValuesInSlice(stub, []string{LoanNegotiationsTableName, LN_NegotiationStatusColName, LN_LoanInvitationIDColName, liID})
+		if err != nil {
+			return errors.New("Error in updateLoanRequestStatus func: " + err.Error())
+		}
+		loanNegStatuses = append(loanNegStatuses, lnStatuses...)
+	}
+
+	var invited, interested, notInterested bool
+	invited = false
+	interested = false
+	notInterested = false
+
+	for i, lnStatus := range loanNegStatuses {
+		fmt.Println()
+		fmt.Println("lnStatus[" + strconv.Itoa(i) + "]: " + lnStatus)
+		fmt.Println()
+		switch lnStatus {
+		case "INTERESTED":
+			interested = true
+		case "DECLINED":
+			notInterested = true
+		default:
+			invited = true
+		}
+	}
+
+	var newLoanRequesStatus string
+	if invited && !interested && !notInterested {
+		newLoanRequesStatus = "Invitation Sent"
+	} else {
+		if invited && (interested || notInterested) {
+			newLoanRequesStatus = "Negotiation Started"
+		} else {
+			if !invited && (interested || notInterested) {
+				newLoanRequesStatus = "Negotiation Completed"
+			} else {
+				newLoanRequesStatus = "Undefined"
+			}
+		}
+	}
+
+	fmt.Println()
+	fmt.Println()
+	fmt.Println(" newLoanRequesStatus: " + newLoanRequesStatus)
+	fmt.Println()
+	fmt.Println()
+
+	_, err = updateTableField(stub, []string{LoanRequestsTableName, loanRequestID, LR_StatusColName, newLoanRequesStatus})
+	if err != nil {
+		return errors.New("Error in updateLoanRequestStatus func: " + err.Error())
+	}
+
+	return nil
+}
+
+func getTableColValuesInSlice(stub shim.ChaincodeStubInterface, args []string) ([]string, error) {
+
+	// 2 or 4 arguments should be provided:
+	// 2 - filter is not needed: tableName, columnName
+	// 4 - filter is need: tableName, columnName, filterColumn, filterValue
+
+	var tableName, columnName, filterColumn, filterValue string
+	var tbl *shim.Table
+	var rows []shim.Row
+	var err error
+
+	switch l := len(args); l {
+	case 2:
+		tableName, filterColumn = args[0], args[1]
+		tbl, rows, err = getRowsByColumnValue(stub, []string{tableName})
+	case 4:
+		tableName, columnName, filterColumn, filterValue = args[0], args[1], args[2], args[3]
+		tbl, rows, err = getRowsByColumnValue(stub, []string{tableName, filterColumn, filterValue})
+	default:
+		return nil, errors.New("Incorrect number of arguments in getTableColValuesInSlice func. Expecting: 2 or 4, " +
+			"provided: " + strconv.Itoa(l))
+	}
+
+	if err != nil {
+		return nil, errors.New("Error in getTableColValuesInSlice func: " + err.Error())
+	}
+
+	var colID int
+	var isColFound bool
+	isColFound = false
+	for i, cd := range tbl.ColumnDefinitions {
+		if cd.Name == columnName {
+			colID = i
+			isColFound = true
+		}
+	}
+	if !isColFound {
+		return nil, errors.New("Error in getTableColValuesInSlice func: Column '" + columnName + "' is not found in '" + tableName + "' table")
+	}
+
+	var colValues []string
+	for _, row := range rows {
+		colValues = append(colValues, row.Columns[colID].GetString_())
+	}
+	return colValues, nil
 }
