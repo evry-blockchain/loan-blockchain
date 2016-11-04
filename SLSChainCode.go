@@ -395,8 +395,8 @@ func populateInitialData(stub shim.ChaincodeStubInterface, args []string) ([]byt
 	//"Company", "Website", "ContactPersonName", "ContactPersonSurname", "RequestDate",
 	//"Status", "MarketAndIndustry"
 	_, _ = deleteRowsByColumnValue(stub, []string{LoanRequestsTableName})
-	_, _ = addLoanRequest(stub, []string{"Statoil ASA", "6", "1M", "1M", "Statoil ASA project", "Statoil ASA project info", "Statoil ASA", "www.statoil.com", "John", "Smith", "10-01-2016", "Pending", "Oil industry"})
-	_, _ = addLoanRequest(stub, []string{"BP Global", "7", "1M", "1M", "BP Global project", "BP Global project info", "BP Global", "www.bp.com", "Peter", "Froystad", "10-01-2016", "Pending", "Oil industry"})
+	_, _ = addLoanRequest(stub, []string{"Statoil ASA", "6", "1M", "1M", "Statoil ASA project", "Statoil ASA project info", "Statoil ASA", "www.statoil.com", "John", "Smith", "10-01-2016", "Draft", "Oil industry"})
+	_, _ = addLoanRequest(stub, []string{"BP Global", "7", "1M", "1M", "BP Global project", "BP Global project info", "BP Global", "www.bp.com", "Peter", "Froystad", "10-01-2016", "Draft", "Oil industry"})
 
 	//Loan Invitation
 	//"ArrangerBankID","BorrowerID","LoanRequestID","LoanTerm","Amount","InterestRate","Info",

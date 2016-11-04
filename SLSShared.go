@@ -282,6 +282,53 @@ func filterTableByKey(stub shim.ChaincodeStubInterface, tableName, keyValue stri
 	return recordsetToJson(stub, tbl, rows)
 }
 
+func getTableColValuesInSlice(stub shim.ChaincodeStubInterface, args []string) ([]string, error) {
+
+	// 2 or 4 arguments should be provided:
+	// 2 - filter is not needed: tableName, columnName
+	// 4 - filter is need: tableName, columnName, filterColumn, filterValue
+
+	var tableName, columnName, filterColumn, filterValue string
+	var tbl *shim.Table
+	var rows []shim.Row
+	var err error
+
+	switch l := len(args); l {
+	case 2:
+		tableName, filterColumn = args[0], args[1]
+		tbl, rows, err = getRowsByColumnValue(stub, []string{tableName})
+	case 4:
+		tableName, columnName, filterColumn, filterValue = args[0], args[1], args[2], args[3]
+		tbl, rows, err = getRowsByColumnValue(stub, []string{tableName, filterColumn, filterValue})
+	default:
+		return nil, errors.New("Incorrect number of arguments in getTableColValuesInSlice func. Expecting: 2 or 4, " +
+			"provided: " + strconv.Itoa(l))
+	}
+
+	if err != nil {
+		return nil, errors.New("Error in getTableColValuesInSlice func: " + err.Error())
+	}
+
+	var colID int
+	var isColFound bool
+	isColFound = false
+	for i, cd := range tbl.ColumnDefinitions {
+		if cd.Name == columnName {
+			colID = i
+			isColFound = true
+		}
+	}
+	if !isColFound {
+		return nil, errors.New("Error in getTableColValuesInSlice func: Column '" + columnName + "' is not found in '" + tableName + "' table")
+	}
+
+	var colValues []string
+	for _, row := range rows {
+		colValues = append(colValues, row.Columns[colID].GetString_())
+	}
+	return colValues, nil
+}
+
 func recordsetToJson(stub shim.ChaincodeStubInterface, tbl *shim.Table, rows []shim.Row) ([]byte, error) {
 
 	var ColumnNames []string

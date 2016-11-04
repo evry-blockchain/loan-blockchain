@@ -132,7 +132,10 @@ func updateLoanRequestStatus(stub shim.ChaincodeStubInterface, loanRequestID str
 	}
 
 	var loanNegStatuses []string
-	for _, liID := range loanInvitationIDs {
+	for i, liID := range loanInvitationIDs {
+		fmt.Println()
+		fmt.Println("loanInvitationIDs[" + strconv.Itoa(i) + "]=" + liID)
+		fmt.Println()
 		lnStatuses, _ := getTableColValuesInSlice(stub, []string{LoanNegotiationsTableName, LN_NegotiationStatusColName, LN_LoanInvitationIDColName, liID})
 		if err != nil {
 			return errors.New("Error in updateLoanRequestStatus func: " + err.Error())
@@ -140,10 +143,10 @@ func updateLoanRequestStatus(stub shim.ChaincodeStubInterface, loanRequestID str
 		loanNegStatuses = append(loanNegStatuses, lnStatuses...)
 	}
 
-	var invited, interested, notInterested bool
-	invited = false
-	interested = false
-	notInterested = false
+	var invited, interested, notInterested int
+	invited = 0
+	interested = 0
+	notInterested = 0
 
 	for i, lnStatus := range loanNegStatuses {
 		fmt.Println()
@@ -151,27 +154,35 @@ func updateLoanRequestStatus(stub shim.ChaincodeStubInterface, loanRequestID str
 		fmt.Println()
 		switch lnStatus {
 		case "INTERESTED":
-			interested = true
+			interested = 1
 		case "DECLINED":
-			notInterested = true
+			notInterested = 1
 		default:
-			invited = true
+			invited = 1
 		}
 	}
 
+	// invited | interested | notInterested | statusResult | newLoanRequesStatus
+	//    0    |     0      |      0        |     0        |      Draft
+	//    0    |     0      |      1        |     1        |      Negotiation Completed
+	//    0    |     1      |      0        |     2        |      Negotiation Completed
+	//    0    |     1      |      1        |     3        |      Negotiation Completed
+	//    1    |     0      |      0        |     4        |      Invitation Sent
+	//    1    |     0      |      1        |     5        |      Negotiation Started
+	//    1    |     1      |      0        |     6        |      Negotiation Started
+	//    1    |     1      |      1        |     7        |      Negotiation Started
+
 	var newLoanRequesStatus string
-	if invited && !interested && !notInterested {
+	statusResult := invited*4 + interested*2 + notInterested
+	switch {
+	case statusResult == 0:
+		newLoanRequesStatus = "Draft"
+	case statusResult >= 1 && statusResult <= 3:
+		newLoanRequesStatus = "Negotiation Completed"
+	case statusResult == 4:
 		newLoanRequesStatus = "Invitation Sent"
-	} else {
-		if invited && (interested || notInterested) {
-			newLoanRequesStatus = "Negotiation Started"
-		} else {
-			if !invited && (interested || notInterested) {
-				newLoanRequesStatus = "Negotiation Completed"
-			} else {
-				newLoanRequesStatus = "Undefined"
-			}
-		}
+	case statusResult >= 5 && statusResult <= 7:
+		newLoanRequesStatus = "Negotiation Started"
 	}
 
 	fmt.Println()
@@ -186,51 +197,4 @@ func updateLoanRequestStatus(stub shim.ChaincodeStubInterface, loanRequestID str
 	}
 
 	return nil
-}
-
-func getTableColValuesInSlice(stub shim.ChaincodeStubInterface, args []string) ([]string, error) {
-
-	// 2 or 4 arguments should be provided:
-	// 2 - filter is not needed: tableName, columnName
-	// 4 - filter is need: tableName, columnName, filterColumn, filterValue
-
-	var tableName, columnName, filterColumn, filterValue string
-	var tbl *shim.Table
-	var rows []shim.Row
-	var err error
-
-	switch l := len(args); l {
-	case 2:
-		tableName, filterColumn = args[0], args[1]
-		tbl, rows, err = getRowsByColumnValue(stub, []string{tableName})
-	case 4:
-		tableName, columnName, filterColumn, filterValue = args[0], args[1], args[2], args[3]
-		tbl, rows, err = getRowsByColumnValue(stub, []string{tableName, filterColumn, filterValue})
-	default:
-		return nil, errors.New("Incorrect number of arguments in getTableColValuesInSlice func. Expecting: 2 or 4, " +
-			"provided: " + strconv.Itoa(l))
-	}
-
-	if err != nil {
-		return nil, errors.New("Error in getTableColValuesInSlice func: " + err.Error())
-	}
-
-	var colID int
-	var isColFound bool
-	isColFound = false
-	for i, cd := range tbl.ColumnDefinitions {
-		if cd.Name == columnName {
-			colID = i
-			isColFound = true
-		}
-	}
-	if !isColFound {
-		return nil, errors.New("Error in getTableColValuesInSlice func: Column '" + columnName + "' is not found in '" + tableName + "' table")
-	}
-
-	var colValues []string
-	for _, row := range rows {
-		colValues = append(colValues, row.Columns[colID].GetString_())
-	}
-	return colValues, nil
 }
