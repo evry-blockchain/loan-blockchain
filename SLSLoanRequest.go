@@ -27,8 +27,12 @@ const LR_ContactPersonSurnameColName = "ContactPersonSurname"
 const LR_RequestDateColName = "RequestDate"
 const LR_StatusColName = "Status"
 const LR_MarketAndIndustryColName = "MarketAndIndustry"
+const LR_LoanTermColName = "LoanTerm"
+const LR_AssetsColName = "Assets"
+const LR_ConvenantsColName = "Convenants"
+const LR_InterestRateColName = "InterestRate"
 
-const LoanRequestsTableColsQty = 14
+const LoanRequestsTableColsQty = 18
 
 // ============================================================================================================================
 //
@@ -38,7 +42,8 @@ func CreateLoanRequestTable(stub shim.ChaincodeStubInterface) error {
 	LR_ColumnNames := []string{LR_LoanRequestIDColName, LR_BorrowerIDColName, LR_ArrangerBankIDColName,
 		LR_LoanSharesAmountColName, LR_ProjectRevenueColName, LR_ProjectNameColName, LR_ProjectInformationColName,
 		LR_CompanyColName, LR_WebsiteColName, LR_ContactPersonNameColName,
-		LR_ContactPersonSurnameColName, LR_RequestDateColName, LR_StatusColName, LR_MarketAndIndustryColName}
+		LR_ContactPersonSurnameColName, LR_RequestDateColName, LR_StatusColName, LR_MarketAndIndustryColName,
+		LR_LoanTermColName, LR_AssetsColName, LR_ConvenantsColName, LR_InterestRateColName}
 	return createTable(stub, LoanRequestsTableName, LR_ColumnNames)
 }
 
@@ -126,21 +131,9 @@ func checkLoanRequestRowPermissionsByBankId(stub shim.ChaincodeStubInterface, lo
 
 func updateLoanRequestStatus(stub shim.ChaincodeStubInterface, loanRequestID string) error {
 
-	loanInvitationIDs, err := getTableColValuesInSlice(stub, []string{LoanInvitationsTableName, LI_LoanInvitationIDColName, LI_LoanRequestIDColName, loanRequestID})
+	loanNegStatuses, err := getTableColValuesInSlice(stub, []string{LoanNegotiationsTableName, LN_NegotiationStatusColName, LN_LoanRequestIDColName, loanRequestID})
 	if err != nil {
 		return errors.New("Error in updateLoanRequestStatus func: " + err.Error())
-	}
-
-	var loanNegStatuses []string
-	for i, liID := range loanInvitationIDs {
-		fmt.Println()
-		fmt.Println("loanInvitationIDs[" + strconv.Itoa(i) + "]=" + liID)
-		fmt.Println()
-		lnStatuses, _ := getTableColValuesInSlice(stub, []string{LoanNegotiationsTableName, LN_NegotiationStatusColName, LN_LoanInvitationIDColName, liID})
-		if err != nil {
-			return errors.New("Error in updateLoanRequestStatus func: " + err.Error())
-		}
-		loanNegStatuses = append(loanNegStatuses, lnStatuses...)
 	}
 
 	var invited, interested, notInterested int

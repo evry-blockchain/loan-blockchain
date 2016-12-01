@@ -3,7 +3,7 @@ package main
 import (
 	//"encoding/json"
 	"errors"
-	"fmt"
+	//"fmt"
 	"strconv"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
@@ -14,7 +14,7 @@ const LoanNegotiationsTableName = "LoanNegotiations"
 
 //Column names
 const LN_LoanNegotiationIDColName = "LoanNegotiationID"
-const LN_LoanInvitationIDColName = "LoanInvitationID"
+const LN_LoanRequestIDColName = "LoanRequestID"
 const LN_ParticipantBankIDColName = "ParticipantBankID"
 const LN_AmountColName = "Amount"
 const LN_NegotiationStatusColName = "NegotiationStatus"
@@ -29,7 +29,7 @@ const LoanNegotiationsTableColsQty = 7
 // ============================================================================================================================
 
 func CreateLoanNegotiationTable(stub shim.ChaincodeStubInterface) error {
-	LN_ColumnNames := []string{LN_LoanNegotiationIDColName, LN_LoanInvitationIDColName, LN_ParticipantBankIDColName,
+	LN_ColumnNames := []string{LN_LoanNegotiationIDColName, LN_LoanRequestIDColName, LN_ParticipantBankIDColName,
 		LN_AmountColName, LN_NegotiationStatusColName, LN_ParticipantBankCommentColName, LN_DateColName}
 	return createTable(stub, LoanNegotiationsTableName, LN_ColumnNames)
 }
@@ -39,11 +39,11 @@ func addLoanNegotiation(stub shim.ChaincodeStubInterface, args []string) ([]byte
 		return nil, errors.New("Incorrect number of arguments. Expecting " + strconv.Itoa(LoanNegotiationsTableColsQty-1))
 	}
 
-	loanInvitationID := args[0] // 0 is a hardcode position of LN_LoanInvitationIDColName argument. Consider avoid hardcoding in the future.
+	loanRequestID := args[0] // 0 is a hardcode position of LN_LoanRequestIDColName argument. Consider avoid hardcoding in the future.
 
 	///////////////////////////Constraint check////////////////////////////
 	//Check if related Loan Invitation exists
-	arrangerBankId, err := getTableColValueByKey(stub, LoanInvitationsTableName, loanInvitationID, LI_ArrangerBankIDColName)
+	arrangerBankId, err := getTableColValueByKey(stub, LoanRequestsTableName, loanRequestID, LR_ArrangerBankIDColName)
 	if err != nil {
 		return nil, errors.New("Error getting related Loan Invitation in addLoanNegotiation func: " + err.Error())
 	}
@@ -58,12 +58,6 @@ func addLoanNegotiation(stub shim.ChaincodeStubInterface, args []string) ([]byte
 	if err != nil {
 		return nil, errors.New("Error in addLoanNegotiation func: " + err.Error())
 	}
-
-	loanRequestID, _ := getTableColValueByKey(stub, LoanInvitationsTableName, loanInvitationID, LI_LoanRequestIDColName)
-
-	fmt.Println()
-	fmt.Println("loanInvitationID: '" + loanInvitationID + "', loanRequestID: '" + loanRequestID + "'")
-	fmt.Println()
 
 	err = updateLoanRequestStatus(stub, loanRequestID)
 	if err != nil {
@@ -92,18 +86,17 @@ func updateLoanNegotiation(stub shim.ChaincodeStubInterface, args []string) ([]b
 		return nil, errors.New("An error occured while running updateLoanNegotiation: " + err.Error())
 	}
 
-	var loanInvitationID string
+	var loanRequestID string
 	for i, cd := range tbl.ColumnDefinitions {
 		_, err := updateTableField(stub, []string{LoanNegotiationsTableName, loanNegotiationID, cd.Name, args[i]})
 		if err != nil {
 			return nil, errors.New("Failed updating field '" + cd.Name + "' in updateLoanNegotiation func: " + err.Error())
 		}
-		if cd.Name == LN_LoanInvitationIDColName {
-			loanInvitationID = args[i]
+		if cd.Name == LN_LoanRequestIDColName {
+			loanRequestID = args[i]
 		}
 	}
 
-	loanRequestID, _ := getTableColValueByKey(stub, LoanRequestsTableName, loanInvitationID, LR_LoanRequestIDColName)
 	err = updateLoanRequestStatus(stub, loanRequestID)
 	if err != nil {
 		return nil, errors.New("Error in updateLoanNegotiation func: " + err.Error())

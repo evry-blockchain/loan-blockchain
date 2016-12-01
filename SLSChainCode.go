@@ -46,42 +46,33 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	if err != nil {
 		return nil, errors.New("Failed creating Participants table: " + err.Error())
 	}
-
-	err = CreateLoanTable(stub)
-	if err != nil {
-		return nil, errors.New("Failed creating Loan table: " + err.Error())
-	}
-	err = CreateLoanSharesTable(stub)
-	if err != nil {
-		return nil, errors.New("Failed creating LoanShares table: " + err.Error())
-	}
 	err = CreateLoanRequestTable(stub)
 	if err != nil {
 		return nil, errors.New("Failed creating LoanRequests table: " + err.Error())
 	}
-	err = CreateLoanInvitationTable(stub)
-	if err != nil {
-		return nil, errors.New("Failed creating LoanInvitations table: " + err.Error())
-	}
-	err = CreateTransactionTable(stub)
-	if err != nil {
-		return nil, errors.New("Failed creating Transactions table: " + err.Error())
-	}
-	err = CreateLoanReturnTable(stub)
-	if err != nil {
-		return nil, errors.New("Failed creating LoanReturn table: " + err.Error())
-	}
-	err = CreateLoanSaleTable(stub)
-	if err != nil {
-		return nil, errors.New("Failed creating LoanSale table: " + err.Error())
-	}
 	err = CreateLoanNegotiationTable(stub)
 	if err != nil {
-		return nil, errors.New("Failed creating CreateLoanNegotiation table: " + err.Error())
+		return nil, errors.New("Failed creating LoanNegotiations table: " + err.Error())
 	}
-	err = createAccountTable(stub)
+	err = CreateLoanTermTable(stub)
 	if err != nil {
-		return nil, errors.New("Failed creating CreateLoanNegotiation table: " + err.Error())
+		return nil, errors.New("Failed creating LoanTerms table: " + err.Error())
+	}
+	err = CreateLoanTermProposalTable(stub)
+	if err != nil {
+		return nil, errors.New("Failed creating LoanTermProposals table: " + err.Error())
+	}
+	err = CreateLoanTermVoteTable(stub)
+	if err != nil {
+		return nil, errors.New("Failed creating LoanTermVotes table: " + err.Error())
+	}
+	err = CreateLoanTermCommentTable(stub)
+	if err != nil {
+		return nil, errors.New("Failed creating LoanTermComments table: " + err.Error())
+	}
+	err = CreateUserTable(stub)
+	if err != nil {
+		return nil, errors.New("Failed creating Users table: " + err.Error())
 	}
 
 	populateInitialData(stub, args)
@@ -98,21 +89,13 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.Init(stub, "init", args)
 	}
 
+	//========================================================================
 	//Participant
 	if function == "addParticipant" {
 		return addParticipant(stub, args)
 	}
 
-	//Loan
-	if function == "addLoan" {
-		return addLoan(stub, args)
-	}
-
-	//LoanShare
-	if function == "addLoanShare" {
-		return addLoanShare(stub, args)
-	}
-
+	//========================================================================
 	//LoanRequest
 	if function == "addLoanRequest" {
 		return addLoanRequest(stub, args)
@@ -121,32 +104,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return updateLoanRequest(stub, args)
 	}
 
-	//Loan Invitation
-	if function == "addLoanInvitation" {
-		return addLoanInvitation(stub, args)
-	}
-	if function == "updateLoanInvitationStatus" {
-		return updateLoanInvitationStatus(stub, args)
-	}
-	if function == "updateLoanInvitation" {
-		return updateLoanInvitation(stub, args)
-	}
-
-	//Transaction
-	if function == "addTransaction" {
-		return addTransaction(stub, args)
-	}
-
-	//Loan Return
-	if function == "addLoanReturn" {
-		return addLoanReturn(stub, args)
-	}
-
-	//Loan Sale
-	if function == "addLoanSale" {
-		return addLoanSale(stub, args)
-	}
-
+	//========================================================================
 	//Loan Negotiation
 	if function == "addLoanNegotiation" {
 		return addLoanNegotiation(stub, args)
@@ -161,12 +119,58 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return updateParticipantBankComment(stub, args)
 	}
 
-	//Account
-	if function == "addAccount" {
-		return addAccount(stub, args)
+	//========================================================================
+	//Loan Term
+	if function == "addLoanTerm" {
+		return addLoanTerm(stub, args)
 	}
-	if function == "updateAccountAmount" {
-		return updateAccountAmount(stub, args)
+	if function == "updateLoanTerm" {
+		return updateLoanTerm(stub, args)
+	}
+
+	//========================================================================
+	//Loan Term Proposal
+	if function == "addLoanTermProposal" {
+		return addLoanTermProposal(stub, args)
+	}
+	if function == "updateLoanTermProposal" {
+		return updateLoanTermProposal(stub, args)
+	}
+
+	//========================================================================
+	//Loan Term Proposal
+	if function == "addLoanTermProposal" {
+		return addLoanTermProposal(stub, args)
+	}
+	if function == "updateLoanTermProposal" {
+		return updateLoanTermProposal(stub, args)
+	}
+
+	//========================================================================
+	//Loan Term Vote
+	if function == "addLoanTermVote" {
+		return addLoanTermVote(stub, args)
+	}
+	if function == "updateLoanTermVote" {
+		return updateLoanTermVote(stub, args)
+	}
+
+	//========================================================================
+	//Loan Term Comment
+	if function == "addLoanTermComment" {
+		return addLoanTermComment(stub, args)
+	}
+	if function == "updateLoanTermComment" {
+		return updateLoanTermComment(stub, args)
+	}
+
+	//========================================================================
+	//User
+	if function == "addUser" {
+		return addUser(stub, args)
+	}
+	if function == "updateUser" {
+		return updateUser(stub, args)
 	}
 
 	//========================================================================
@@ -194,6 +198,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Println("query is running " + function)
 
+	//========================================================================
 	// Handle different functions
 	//Participants
 	if function == "getParticipantsQuantity" {
@@ -212,24 +217,9 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 		return getParticipantsMaxKey(stub, args)
 	}
 
-	//Loans
-	if function == "getLoansQuantity" {
-		return getLoansQuantity(stub, args)
-	}
-	if function == "getLoansList" {
-		return getLoansList(stub, args)
-	}
-
-	//LoanShares
-	if function == "getLoanSharesQuantity" {
-		return getLoanSharesQuantity(stub, args)
-	}
-	if function == "getLoanSharesList" {
-		return getLoanSharesList(stub, args)
-	}
-
+	//========================================================================
 	//LoanRequest
-	if function == "getLoanRequestsQuantity" { //read a variable
+	if function == "getLoanRequestsQuantity" {
 		return getLoanRequestsQuantity(stub, args)
 	}
 	if function == "getLoanRequestsList" {
@@ -242,46 +232,9 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 		return getLoanRequestsMaxKey(stub, args)
 	}
 
-	//LoanInvitation
-	if function == "getLoanInvitationsQuantity" { //read a variable
-		return getLoanInvitationsQuantity(stub, args)
-	}
-	if function == "getLoanInvitationsList" {
-		return getLoanInvitationsList(stub, args)
-	}
-	if function == "getLoanInvitationByKey" {
-		return getLoanInvitationByKey(stub, args)
-	}
-	if function == "getLoanInvitationsMaxKey" {
-		return getLoanInvitationsMaxKey(stub, args)
-	}
-
-	//Transactions
-	if function == "getTransactionsQuantity" { //read a variable
-		return getTransactionsQuantity(stub, args)
-	}
-	if function == "getTransactionsList" {
-		return getTransactionsList(stub, args)
-	}
-
-	//Loan Return
-	if function == "getLoanReturnsQuantity" { //read a variable
-		return getLoanReturnsQuantity(stub, args)
-	}
-	if function == "getLoanReturnsList" {
-		return getLoanReturnsList(stub, args)
-	}
-
-	//Loan Sale
-	if function == "getLoanSalesQuantity" { //read a variable
-		return getLoanSalesQuantity(stub, args)
-	}
-	if function == "getLoanSalesList" {
-		return getLoanSalesList(stub, args)
-	}
-
+	//========================================================================
 	//Loan Negotiation
-	if function == "getLoanNegotiationsQuantity" { //read a variable
+	if function == "getLoanNegotiationsQuantity" {
 		return getLoanNegotiationsQuantity(stub, args)
 	}
 	if function == "getLoanNegotiationsList" {
@@ -294,12 +247,79 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 		return getLoanNegotiationsMaxKey(stub, args)
 	}
 
-	//Account
-	if function == "getAccountsQuantity" { //read a variable
-		return getAccountsQuantity(stub, args)
+	//========================================================================
+	//Loan Term
+	if function == "getLoanTermQuantity" {
+		return getLoanTermQuantity(stub, args)
 	}
-	if function == "getAccountsList" {
-		return getAccountsList(stub, args)
+	if function == "getLoanTermList" {
+		return getLoanTermList(stub, args)
+	}
+	if function == "getLoanTermByKey" {
+		return getLoanTermByKey(stub, args)
+	}
+	if function == "getLoanTermMaxKey" {
+		return getLoanTermMaxKey(stub, args)
+	}
+
+	//========================================================================
+	//Loan Term Proposal
+	if function == "getLoanTermProposalQuantity" {
+		return getLoanTermProposalQuantity(stub, args)
+	}
+	if function == "getLoanTermProposalList" {
+		return getLoanTermProposalList(stub, args)
+	}
+	if function == "getLoanTermProposalByKey" {
+		return getLoanTermProposalByKey(stub, args)
+	}
+	if function == "getLoanTermProposalMaxKey" {
+		return getLoanTermProposalMaxKey(stub, args)
+	}
+
+	//========================================================================
+	//Loan Term Vote
+	if function == "getLoanTermVoteQuantity" {
+		return getLoanTermVoteQuantity(stub, args)
+	}
+	if function == "getLoanTermVoteList" {
+		return getLoanTermVoteList(stub, args)
+	}
+	if function == "getLoanTermVoteByKey" {
+		return getLoanTermVoteByKey(stub, args)
+	}
+	if function == "getLoanTermVoteMaxKey" {
+		return getLoanTermVoteMaxKey(stub, args)
+	}
+
+	//========================================================================
+	//Loan Term Comment
+	if function == "getLoanTermCommentQuantity" {
+		return getLoanTermCommentQuantity(stub, args)
+	}
+	if function == "getLoanTermCommentList" {
+		return getLoanTermCommentList(stub, args)
+	}
+	if function == "getLoanTermCommentByKey" {
+		return getLoanTermCommentByKey(stub, args)
+	}
+	if function == "getLoanTermCommentMaxKey" {
+		return getLoanTermCommentMaxKey(stub, args)
+	}
+
+	//========================================================================
+	//User
+	if function == "getUserQuantity" {
+		return getUserQuantity(stub, args)
+	}
+	if function == "getUserList" {
+		return getUserList(stub, args)
+	}
+	if function == "getUserByKey" {
+		return getUserByKey(stub, args)
+	}
+	if function == "getUserMaxKey" {
+		return getUserMaxKey(stub, args)
 	}
 
 	//========================================================================
@@ -385,25 +405,24 @@ func populateInitialData(stub shim.ChaincodeStubInterface, args []string) ([]byt
 	_, _ = addParticipant(stub, []string{"11", "Mizuho Bank, Ltd.", "Bank"})
 
 	//Accounts
-	/*_, _ = deleteRowsByColumnValue(stub, []string{AccountsTableName})
+	_, _ = deleteRowsByColumnValue(stub, []string{AccountsTableName})
 	_, _ = addAccount(stub, []string{"1", "10000"})
 	_, _ = addAccount(stub, []string{"2", "50000"})
-	_, _ = addAccount(stub, []string{"3", "30000"})*/
+	_, _ = addAccount(stub, []string{"3", "30000"})
 
 	//Loan Request
 	// "BorrowerID", "ArrangerBankID", "LoanSharesAmount", "ProjectRevenue", "ProjectName", "ProjectInformation",
 	//"Company", "Website", "ContactPersonName", "ContactPersonSurname", "RequestDate",
 	//"Status", "MarketAndIndustry"
 	_, _ = deleteRowsByColumnValue(stub, []string{LoanRequestsTableName})
-	_, _ = addLoanRequest(stub, []string{"Statoil ASA", "6", "1M", "1M", "Statoil ASA project", "Statoil ASA project info", "Statoil ASA", "www.statoil.com", "John", "Smith", "10-01-2016", "Draft", "Oil industry"})
-	_, _ = addLoanRequest(stub, []string{"BP Global", "7", "1M", "1M", "BP Global project", "BP Global project info", "BP Global", "www.bp.com", "Peter", "Froystad", "10-01-2016", "Draft", "Oil industry"})
-
-	//Loan Invitation
-	//"ArrangerBankID","BorrowerID","LoanRequestID","LoanTerm","Amount","InterestRate","Info",
-	//"Status", "Assets", "Convenants"
-	_, _ = deleteRowsByColumnValue(stub, []string{LoanInvitationsTableName})
-	_, _ = addLoanInvitation(stub, []string{"6", "Statoil ASA", "1", "2 years", "400M USD", "3%", "Statoil ASA loan invitation info", "Pending", "Assets Statoil ASA", "Convenats Statoil ASA"})
-	_, _ = addLoanInvitation(stub, []string{"7", "BP Global", "2", "3 years", "750M USD", "5%", "BP Global loan invitation info", "Pending", "Assets BP Global", "Convenats BP Global"})
+	_, _ = addLoanRequest(stub, []string{"Statoil ASA", "6", "1M", "1M", "Statoil ASA project",
+		"Statoil ASA project info", "Statoil ASA", "www.statoil.com",
+		"John", "Smith", "10-01-2016", "Draft", "Oil industry",
+		"some LoanTerm", "some Assets", "some Convenants", "some InterestRate"})
+	_, _ = addLoanRequest(stub, []string{"BP Global", "7", "1M", "1M", "BP Global project",
+		"BP Global project info", "BP Global", "www.bp.com", "Peter",
+		"Froystad", "10-01-2016", "Draft", "Oil industry",
+		"some LoanTerm", "some Assets", "some Convenants", "some InterestRate"})
 
 	//Loan Share Negotiation
 	//"InvitationID","ParticipantBankID","Amount","NegotiationStatus", "ParticipantBankComment", "Date"
