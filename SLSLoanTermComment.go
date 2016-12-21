@@ -19,9 +19,10 @@ const LTC_LoanTermIDColName = "LoanTermID"
 const LTC_UserIDColName = "UserID"
 const LTC_BankIDColName = "BankID"
 const LTC_CommentTextColName = "CommentText"
+const LTC_LoanTermCommentDateColName = "LoanTermCommentDate"
 
 //Column quantity
-const LoanTermCommentTableColsQty = 6
+const LoanTermCommentTableColsQty = 7
 
 // ============================================================================================================================
 //
@@ -29,7 +30,7 @@ const LoanTermCommentTableColsQty = 6
 
 func CreateLoanTermCommentTable(stub shim.ChaincodeStubInterface) error {
 	LTC_ColumnNames := []string{LTC_LoanTermCommentIDColName, LTC_ParentLoanTermCommentIDColName, LTC_LoanTermIDColName,
-		LTC_UserIDColName, LTC_BankIDColName, LTC_CommentTextColName}
+		LTC_UserIDColName, LTC_BankIDColName, LTC_CommentTextColName, LTC_LoanTermCommentDateColName}
 	return createTable(stub, LoanTermCommentTableName, LTC_ColumnNames)
 }
 
@@ -50,7 +51,7 @@ func addLoanTermComment(stub shim.ChaincodeStubInterface, args []string) ([]byte
 	}
 
 	return nil, errors.New("Incorrect number of arguments. " +
-		"Provided " + strconv.Itoa(len(args)) + "Expecting " + strconv.Itoa(LoanTermCommentTableColsQty-1) +
+		"Provided " + strconv.Itoa(len(args)) + " ,expected " + strconv.Itoa(LoanTermCommentTableColsQty-1) +
 		" or " + strconv.Itoa(LoanTermCommentTableColsQty))
 }
 
