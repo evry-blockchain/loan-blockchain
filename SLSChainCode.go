@@ -404,6 +404,26 @@ func populateInitialData(stub shim.ChaincodeStubInterface, args []string) ([]byt
 	_, _ = addParticipant(stub, []string{"10", "Barclays", "Bank"})
 	_, _ = addParticipant(stub, []string{"11", "Mizuho Bank, Ltd.", "Bank"})
 
+	//Adding users with keys
+	_, _ = addUser(stub, []string{"1", "6", "srbank_user1"})
+	_, _ = addUser(stub, []string{"2", "6", "srbank_user2"})
+	_, _ = addUser(stub, []string{"3", "6", "srbank_user3"})
+	_, _ = addUser(stub, []string{"4", "7", "dnb_user1"})
+	_, _ = addUser(stub, []string{"5", "7", "dnb_user2"})
+	_, _ = addUser(stub, []string{"6", "7", "dnb_user3"})
+	_, _ = addUser(stub, []string{"7", "8", "nationwide_user1"})
+	_, _ = addUser(stub, []string{"8", "8", "nationwide_user2"})
+	_, _ = addUser(stub, []string{"9", "8", "nationwide_user3"})
+	_, _ = addUser(stub, []string{"10", "9", "jpmorgan_user1"})
+	_, _ = addUser(stub, []string{"11", "9", "jpmorgan_user2"})
+	_, _ = addUser(stub, []string{"12", "9", "jpmorgan_user3"})
+	_, _ = addUser(stub, []string{"13", "10", "barclays_user1"})
+	_, _ = addUser(stub, []string{"14", "10", "barclays_user2"})
+	_, _ = addUser(stub, []string{"15", "10", "barclays_user3"})
+	_, _ = addUser(stub, []string{"16", "11", "mizuho_user1"})
+	_, _ = addUser(stub, []string{"17", "11", "mizuho_user2"})
+	_, _ = addUser(stub, []string{"18", "11", "mizuho_user3"})
+
 	//Accounts
 	_, _ = deleteRowsByColumnValue(stub, []string{AccountsTableName})
 	_, _ = addAccount(stub, []string{"1", "10000"})
