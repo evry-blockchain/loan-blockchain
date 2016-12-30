@@ -339,6 +339,9 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	if function == "getBankId" {
 		return getBankId(stub, args)
 	}
+	if function == "getUserId" {
+		return getUserId(stub, args)
+	}
 	if function == "getProjectsList" {
 		return getProjectsList(stub, args)
 	}
@@ -377,6 +380,20 @@ func getBankId(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) 
 	return []byte(string(attribute)), nil
 }
 
+func getUserId(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	if len(args) != 0 {
+		return nil, errors.New("Incorrect number of arguments in getUserId func. Expecting 0")
+	}
+
+	attrName := "userid"
+	attribute, err := stub.ReadCertAttribute(attrName)
+	if err != nil {
+		return nil, errors.New("Failed retrieving Certificate Attribute '" + attrName + "' in getUserId func: " + err.Error())
+	}
+
+	return []byte(string(attribute)), nil
+}
+
 func checkAttribute(stub shim.ChaincodeStubInterface, attrName, attrValue string) (bool, error) {
 	if !isAuthenticationEnabled {
 		return true, nil
@@ -405,24 +422,30 @@ func populateInitialData(stub shim.ChaincodeStubInterface, args []string) ([]byt
 	_, _ = addParticipant(stub, []string{"11", "Mizuho Bank, Ltd.", "Bank"})
 
 	//Adding users with keys
-	_, _ = addUser(stub, []string{"1", "6", "srbank_user1"})
-	_, _ = addUser(stub, []string{"2", "6", "srbank_user2"})
-	_, _ = addUser(stub, []string{"3", "6", "srbank_user3"})
-	_, _ = addUser(stub, []string{"4", "7", "dnb_user1"})
-	_, _ = addUser(stub, []string{"5", "7", "dnb_user2"})
-	_, _ = addUser(stub, []string{"6", "7", "dnb_user3"})
-	_, _ = addUser(stub, []string{"7", "8", "nationwide_user1"})
-	_, _ = addUser(stub, []string{"8", "8", "nationwide_user2"})
-	_, _ = addUser(stub, []string{"9", "8", "nationwide_user3"})
-	_, _ = addUser(stub, []string{"10", "9", "jpmorgan_user1"})
-	_, _ = addUser(stub, []string{"11", "9", "jpmorgan_user2"})
-	_, _ = addUser(stub, []string{"12", "9", "jpmorgan_user3"})
-	_, _ = addUser(stub, []string{"13", "10", "barclays_user1"})
-	_, _ = addUser(stub, []string{"14", "10", "barclays_user2"})
-	_, _ = addUser(stub, []string{"15", "10", "barclays_user3"})
-	_, _ = addUser(stub, []string{"16", "11", "mizuho_user1"})
-	_, _ = addUser(stub, []string{"17", "11", "mizuho_user2"})
-	_, _ = addUser(stub, []string{"18", "11", "mizuho_user3"})
+	_, _ = addUser(stub, []string{"1", "6", "srbank"})
+	_, _ = addUser(stub, []string{"2", "6", "srbank_user1"})
+	_, _ = addUser(stub, []string{"3", "6", "srbank_user2"})
+	_, _ = addUser(stub, []string{"4", "6", "srbank_user3"})
+	_, _ = addUser(stub, []string{"5", "7", "dnb"})
+	_, _ = addUser(stub, []string{"6", "7", "dnb_user1"})
+	_, _ = addUser(stub, []string{"7", "7", "dnb_user2"})
+	_, _ = addUser(stub, []string{"8", "7", "dnb_user3"})
+	_, _ = addUser(stub, []string{"9", "8", "nationwide"})
+	_, _ = addUser(stub, []string{"10", "8", "nationwide_user1"})
+	_, _ = addUser(stub, []string{"11", "8", "nationwide_user2"})
+	_, _ = addUser(stub, []string{"12", "8", "nationwide_user3"})
+	_, _ = addUser(stub, []string{"13", "9", "jpmorgan"})
+	_, _ = addUser(stub, []string{"14", "9", "jpmorgan_user1"})
+	_, _ = addUser(stub, []string{"15", "9", "jpmorgan_user2"})
+	_, _ = addUser(stub, []string{"16", "9", "jpmorgan_user3"})
+	_, _ = addUser(stub, []string{"17", "10", "barclays"})
+	_, _ = addUser(stub, []string{"18", "10", "barclays_user1"})
+	_, _ = addUser(stub, []string{"19", "10", "barclays_user2"})
+	_, _ = addUser(stub, []string{"20", "10", "barclays_user3"})
+	_, _ = addUser(stub, []string{"21", "11", "mizuho"})
+	_, _ = addUser(stub, []string{"22", "11", "mizuho_user1"})
+	_, _ = addUser(stub, []string{"23", "11", "mizuho_user2"})
+	_, _ = addUser(stub, []string{"24", "11", "mizuho_user3"})
 
 	//Accounts
 	_, _ = deleteRowsByColumnValue(stub, []string{AccountsTableName})
